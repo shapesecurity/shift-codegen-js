@@ -1,0 +1,56 @@
+{
+  "name": "laserbat-codegen",
+  "version": "1.0.0",
+  "description": "ECMAScript5 code generator that consumes LaserBat format ASTs",
+  "author": "Shape Security Labs",
+  "homepage": "https://github.com/shapesecurity/laserbat-codegen-js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shapesecurity/laserbat-codegen-js.git"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "npm run-script coverage",
+    "build": "mkdir lib; 6to5 src -d lib; npm run cjsify",
+    "coverage": "istanbul cover node_modules/.bin/_mocha",
+    "cjsify": "cjsify --export LaserBatParser lib/index.js > lib/laserbat-codegen.js"
+  },
+  "dependencies": {
+    "laserbat-ast": "git+ssh://git@github.com:shapesecurity/laserbat-ast-js",
+    "laserbat-spidermonkey-converter": "git+ssh://git@github.com/shapesecurity/laserbat-spidermonkey-converter-js#fix-var-decl-stmt"
+  },
+  "devDependencies": {
+    "6to5": "^1.14.14",
+    "commonjs-everywhere": "^0.9.7",
+    "esmangle": "^1.0.1",
+    "esprima": "^1.2.2",
+    "expect.js": "^0.3.1",
+    "istanbul": "^0.3.5",
+    "mocha": "^2.0.1"
+  },
+  "keywords": [
+    "LaserBat",
+    "AST",
+    "node",
+    "converter",
+    "SpiderMonkey",
+    "Parser",
+    "API",
+    "convert",
+    "between",
+    "laser",
+    "bat",
+    "spider",
+    "monkey",
+    "abstract",
+    "syntax",
+    "tree"
+  ],
+  "bugs": {
+    "url": "https://github.com/shapesecurity/laserbat-codegen-js/issues"
+  },
+  "license": "Apache-2.0"
+}
