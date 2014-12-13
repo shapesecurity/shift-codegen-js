@@ -1,13 +1,13 @@
-ECMAScript5 code generator that consumes LaserBat format ASTs
-=============================================================
+LaserBat Code Generator
+=======================
 
 ## About
 
-This project provides an [ECMAScript5](http://www.ecma-international.org/ecma-262/5.1/)
-parser that produces [LaserBat format](https://github.com/shapesecurity/laserbat) ASTs.
+This project provides a code generator for [LaserBat format](https://github.com/shapesecurity/laserbat) ASTs.
 
 ## Status
-[Unstable](http://nodejs.org/api/documentation.html#documentation_stability_index).
+
+Working toward full [ECMAScript 5](http://www.ecma-international.org/ecma-262/5.1/) support. [Experimental](http://nodejs.org/api/documentation.html#documentation_stability_index).
 
 
 ## Installation
