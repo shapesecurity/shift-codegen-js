@@ -14,9 +14,9 @@
   ],
   "scripts": {
     "test": "npm run-script coverage",
-    "build": "mkdir lib; 6to5 src -d lib; npm run cjsify",
+    "build": "mkdir lib; 6to5 src -s -d lib; npm run cjsify",
     "coverage": "istanbul cover node_modules/.bin/_mocha",
-    "cjsify": "cjsify --export LaserBatParser lib/index.js > lib/laserbat-codegen.js"
+    "cjsify": "cjsify lib/index.js > lib/laserbat-codegen.js"
   },
   "dependencies": {
     "laserbat-ast": "git+ssh://git@github.com:shapesecurity/laserbat-ast-js",
