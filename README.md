@@ -1,9 +1,10 @@
-LaserBat Code Generator
-=======================
+Shift Code Generator
+====================
 
 ## About
 
-This project provides a code generator for [LaserBat format](https://github.com/shapesecurity/laserbat) ASTs.
+This project provides a code generator for
+[Shift format](https://github.com/shapesecurity/shift-spec) ASTs.
 
 ## Status
 
@@ -13,13 +14,15 @@ Working toward full [ECMAScript 5](http://www.ecma-international.org/ecma-262/5.
 ## Installation
 
 ```sh
-npm install laserbat-codegen
+npm install shift-codegen
 ```
 
 
 ## Usage
 
 ```js
+import codegen from "shift-codegen"
+let programSource = codegen(/* Shift format AST */);
 ```
 
 

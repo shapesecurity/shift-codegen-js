@@ -17,7 +17,7 @@
 import {code} from "esutils";
 
 function numberDot(fragment) {
-  if (fragment.indexOf('.') < 0 && fragment.indexOf('e') < 0) {
+  if (fragment.indexOf(".") < 0 && fragment.indexOf("e") < 0) {
     return "..";
   }
   return ".";
@@ -52,7 +52,7 @@ export class TokenStream {
       if (tokenStr === ".") {
         this.result += numberDot(this.lastNumber);
         this.lastNumber = null;
-        this.lastChar = '.';
+        this.lastChar = ".";
         return;
       }
     }
@@ -61,11 +61,11 @@ export class TokenStream {
     let lastChar = this.lastChar;
     this.lastChar = tokenStr.charAt(tokenStr.length - 1);
     if (lastChar &&
-        ((lastChar == '+' || lastChar == '-') &&
+        ((lastChar == "+" || lastChar == "-") &&
         lastChar == rightChar ||
         code.isIdentifierPart(lastChar.charCodeAt(0)) && code.isIdentifierPart(rightChar.charCodeAt(0)) ||
-        lastChar == '/' && rightChar == 'i')) {
-      this.result += ' ';
+        lastChar == "/" && rightChar == "i")) {
+      this.result += " ";
     }
 
     this.result += tokenStr;

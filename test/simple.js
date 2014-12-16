@@ -14,35 +14,35 @@
  * limitations under the License.
  */
 
-var expect = require('expect.js');
-var ast = require('laserbat-ast');
-var codeGen = require('../lib/index.js')['default'];
-var parse = require("laserbat-parser")['default'];
+var expect = require("expect.js");
+var Shift = require("shift-ast");
+var codeGen = require("../lib/index.js")["default"];
+var parse = require("shift-parser")["default"];
 
 describe("API", function () {
   it("should exist", function () {
-    expect(typeof codeGen).be('function');
+    expect(typeof codeGen).be("function");
   });
 });
 
 describe("Code generator", function () {
 
-  var IdentifierExpression = ast.IdentifierExpression;
-  var EmptyStatement = ast.EmptyStatement;
-  var IfStatement = ast.IfStatement;
-  var LabeledStatement = ast.LabeledStatement;
-  var Identifier = ast.Identifier;
-  var WhileStatement = ast.WhileStatement;
-  var WithStatement = ast.WithStatement;
-  var ForStatement = ast.ForStatement;
-  var ForInStatement = ast.ForInStatement;
+  var IdentifierExpression = Shift.IdentifierExpression;
+  var EmptyStatement = Shift.EmptyStatement;
+  var IfStatement = Shift.IfStatement;
+  var LabeledStatement = Shift.LabeledStatement;
+  var Identifier = Shift.Identifier;
+  var WhileStatement = Shift.WhileStatement;
+  var WithStatement = Shift.WithStatement;
+  var ForStatement = Shift.ForStatement;
+  var ForInStatement = Shift.ForInStatement;
 
   describe("generates simple ECMAScript", function () {
     function statement(stmt) {
-      return new ast.Script(new ast.FunctionBody([], [stmt]));
+      return new Shift.Script(new Shift.FunctionBody([], [stmt]));
     }
 
-    function testAst(to, tree) {
+    function testShift(to, tree) {
       expect(codeGen(tree)).be(to);
     }
 
@@ -57,8 +57,8 @@ describe("Code generator", function () {
     it("Directives", function () {
       test("\"use strict\"");
       test("\"use\\u0020strict\"");
-      testAst("\"use\\u0020strict\"",
-          new ast.Script(new ast.FunctionBody([new ast.UnknownDirective("use strict")], [])));
+      testShift("\"use\\u0020strict\"",
+          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use strict")], [])));
     });
 
     it("ArrayExpression", function () {
@@ -356,19 +356,19 @@ describe("Code generator", function () {
       var EMPTY = new EmptyStatement();
 
       var MISSING_ELSE = new IfStatement(IDENT, EMPTY, null);
-      testAst("if(a){a:if(a);}else;",
+      testShift("if(a){a:if(a);}else;",
           statement(new IfStatement(IDENT, new LabeledStatement(new Identifier("a"), MISSING_ELSE), EMPTY)));
-      testAst("if(a){if(a);else if(a);}else;",
+      testShift("if(a){if(a);else if(a);}else;",
           statement(new IfStatement(IDENT, new IfStatement(IDENT, EMPTY, MISSING_ELSE), EMPTY)));
-      testAst("if(a){if(a);}else;",
+      testShift("if(a){if(a);}else;",
           statement(new IfStatement(IDENT, MISSING_ELSE, EMPTY)));
-      testAst("if(a){while(a)if(a);}else;",
+      testShift("if(a){while(a)if(a);}else;",
           statement(new IfStatement(IDENT, new WhileStatement(IDENT, MISSING_ELSE), EMPTY)));
-      testAst("if(a){with(a)if(a);}else;",
+      testShift("if(a){with(a)if(a);}else;",
           statement(new IfStatement(IDENT, new WithStatement(IDENT, MISSING_ELSE), EMPTY)));
-      testAst("if(a){for(;;)if(a);}else;",
+      testShift("if(a){for(;;)if(a);}else;",
           statement(new IfStatement(IDENT, new ForStatement(null, null, null, MISSING_ELSE), EMPTY)));
-      testAst("if(a){for(a in a)if(a);}else;",
+      testShift("if(a){for(a in a)if(a);}else;",
           statement(new IfStatement(IDENT, new ForInStatement(IDENT, IDENT, MISSING_ELSE), EMPTY)));
     });
 
@@ -424,7 +424,7 @@ describe("Code generator", function () {
     it("ProgramBody", function () {
       test("");
       test("\"use strict\"");
-      testAst(";\"use strict\"", statement(new ast.ExpressionStatement(new ast.LiteralStringExpression("use strict",
+      testShift(";\"use strict\"", statement(new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict",
           "\'use strict\'"))));
     });
 

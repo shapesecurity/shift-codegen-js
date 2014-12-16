@@ -1,12 +1,12 @@
 {
-  "name": "laserbat-codegen",
+  "name": "shift-codegen",
   "version": "1.0.0",
-  "description": "ECMAScript5 code generator that consumes LaserBat format ASTs",
+  "description": "code generator for Shift format ASTs",
   "author": "Shape Security Labs",
-  "homepage": "https://github.com/shapesecurity/laserbat-codegen-js",
+  "homepage": "https://github.com/shapesecurity/shift-codegen-js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shapesecurity/laserbat-codegen-js.git"
+    "url": "https://github.com/shapesecurity/shift-codegen-js.git"
   },
   "main": "lib/index.js",
   "files": [
@@ -14,13 +14,16 @@
   ],
   "scripts": {
     "test": "npm run-script coverage",
-    "build": "mkdir lib; 6to5 src -s -d lib; npm run cjsify",
-    "coverage": "istanbul cover node_modules/.bin/_mocha",
-    "cjsify": "cjsify lib/index.js > lib/laserbat-codegen.js"
+    "build": "6to5 --source-maps-inline --out-dir lib src",
+    "coverage": "istanbul cover node_modules/.bin/_mocha -- --inline-diffs --check-leaks --ui tdd --reporter dot test",
+    "cjsify": "cjsify --export ShiftCodegen lib/index.js > shift-codegen.js"
   },
   "dependencies": {
-    "laserbat-ast": "git+ssh://git@github.com:shapesecurity/laserbat-ast-js",
-    "laserbat-spidermonkey-converter": "git+ssh://git@github.com/shapesecurity/laserbat-spidermonkey-converter-js#fix-var-decl-stmt"
+    "esutils": "^1.1.6",
+    "object-assign": "^2.0.0",
+    "shift-ast": "^1.0.0",
+    "shift-reducer": "^1.0.1",
+    "shift-spidermonkey-converter": "^1.0.0"
   },
   "devDependencies": {
     "6to5": "^1.14.14",
@@ -32,17 +35,13 @@
     "mocha": "^2.0.1"
   },
   "keywords": [
-    "LaserBat",
+    "Shift",
     "AST",
     "node",
-    "converter",
+    "codegen",
     "SpiderMonkey",
     "Parser",
     "API",
-    "convert",
-    "between",
-    "laser",
-    "bat",
     "spider",
     "monkey",
     "abstract",
@@ -50,7 +49,7 @@
     "tree"
   ],
   "bugs": {
-    "url": "https://github.com/shapesecurity/laserbat-codegen-js/issues"
+    "url": "https://github.com/shapesecurity/shift-codegen-js/issues"
   },
   "license": "Apache-2.0"
 }

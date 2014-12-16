@@ -1,4 +1,4 @@
-import reduce, {Reducer} from "laserbat-reducer";
+import reduce, {Reducer} from "shift-reducer";
 import * as objectAssign from "object-assign";
 import {TokenStream} from "./token_stream";
 
@@ -63,44 +63,44 @@ const BinaryPrecedence = {
 
 function getPrecedence(node) {
   switch (node.type) {
-    case 'ArrayExpression':
-    case 'FunctionExpression':
-    case 'IdentifierExpression':
-    case 'LiteralBooleanExpression':
-    case 'LiteralNullExpression':
-    case 'LiteralNumericExpression':
-    case 'LiteralRegExpExpression':
-    case 'LiteralStringExpression':
-    case 'ObjectExpression':
+    case "ArrayExpression":
+    case "FunctionExpression":
+    case "IdentifierExpression":
+    case "LiteralBooleanExpression":
+    case "LiteralNullExpression":
+    case "LiteralNumericExpression":
+    case "LiteralRegExpExpression":
+    case "LiteralStringExpression":
+    case "ObjectExpression":
       return Precedence.Primary;
 
-    case 'AssignmentExpression':
+    case "AssignmentExpression":
       return Precedence.Assignment;
 
-    case 'ConditionalExpression':
+    case "ConditionalExpression":
       return Precedence.Conditional;
 
-    case 'ComputedMemberExpression':
-    case 'StaticMemberExpression':
+    case "ComputedMemberExpression":
+    case "StaticMemberExpression":
       switch (node.object.type) {
-        case 'CallExpression':
-        case 'ComputedMemberExpression':
-        case 'StaticMemberExpression':
+        case "CallExpression":
+        case "ComputedMemberExpression":
+        case "StaticMemberExpression":
           return getPrecedence(node.object);
         default:
           return Precedence.Member;
       }
 
-    case 'BinaryExpression':
+    case "BinaryExpression":
       return BinaryPrecedence[node.operator];
 
-    case 'CallExpression':
+    case "CallExpression":
       return Precedence.Call;
-    case 'NewExpression':
+    case "NewExpression":
       return node.arguments.length === 0 ? Precedence.New : Precedence.Member;
-    case 'PostfixExpression':
+    case "PostfixExpression":
       return Precedence.Postfix;
-    case 'PrefixExpression':
+    case "PrefixExpression":
       return Precedence.Prefix;
   }
 }
