@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+var assert = require("assert");
 var expect = require("expect.js");
 var Shift = require("shift-ast");
-var codeGen = require("../lib/index.js")["default"];
+var codeGen = require("../")["default"];
 var parse = require("shift-parser")["default"];
 
 describe("API", function () {
@@ -44,21 +45,26 @@ describe("Code generator", function () {
 
     function testShift(to, tree) {
       expect(codeGen(tree)).be(to);
+      expect(codeGen(parse(to))).be(to);
+      assert.deepEqual(parse(to), tree);
     }
 
     function test(source) {
       expect(codeGen(parse(source))).be(source);
+      assert.deepEqual(parse(codeGen(parse(source))), parse(source));
     }
 
     function test2(expected, source) {
       expect(codeGen(parse(source))).be(expected);
+      expect(codeGen(parse(expected))).be(expected);
     }
 
     it("Directives", function () {
       test("\"use strict\"");
       test("\"use\\u0020strict\"");
-      testShift("\"use\\u0020strict\"",
-          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use strict")], [])));
+      testShift("\"use\\u0020strict\"", new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use strict")], [])));
+      test("\"use strict\"");
+      testShift(";\"use strict\"", statement(new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict", "\'use strict\'"))));
     });
 
     it("ArrayExpression", function () {
@@ -74,10 +80,10 @@ describe("Code generator", function () {
 
     it("ObjectExpression", function () {
       test("({})");
-      test("({a:1})", "({a:1,})");
+      test2("({a:1})", "({a:1,})");
       test("({}.a--)");
-      test("({1:1})", "({1.0:1})");
-      test("({a:b})", "({a:b})");
+      test2("({1:1})", "({1.0:1})");
+      test2("({a:b})", "({a:b})");
       test("({get a(){;}})");
       test("({set a(param){;}})");
       test("({get a(){;},set a(param){;},b:1})");
@@ -421,11 +427,8 @@ describe("Code generator", function () {
       test("with(0)with(0);");
     });
 
-    it("ProgramBody", function () {
+    it("Script", function () {
       test("");
-      test("\"use strict\"");
-      testShift(";\"use strict\"", statement(new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict",
-          "\'use strict\'"))));
     });
 
   });
