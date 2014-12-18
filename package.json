@@ -33,7 +33,7 @@
     "expect.js": "^0.3.1",
     "istanbul": "^0.3.5",
     "mocha": "^2.0.1",
-    "shift-parser": "git+ssh://git@github.com:shapesecurity/shift-parser-js"
+    "shift-parser": "^1.0.0"
   },
   "keywords": [
     "Shift",
