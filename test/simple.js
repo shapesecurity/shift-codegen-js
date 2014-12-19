@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-var assert = require("assert");
 var expect = require("expect.js");
 var Shift = require("shift-ast");
 var codeGen = require("../")["default"];
@@ -44,14 +43,15 @@ describe("Code generator", function () {
     }
 
     function testShift(to, tree) {
-      expect(codeGen(tree)).be(to);
+      var dst = codeGen(tree);
+      expect(dst).be(to);
       expect(codeGen(parse(to))).be(to);
-      assert.deepEqual(parse(to), tree);
+      expect(parse(to)).eql(tree);
     }
 
     function test(source) {
       expect(codeGen(parse(source))).be(source);
-      assert.deepEqual(parse(codeGen(parse(source))), parse(source));
+      expect(parse(codeGen(parse(source)))).eql(parse(source));
     }
 
     function test2(expected, source) {
@@ -62,9 +62,14 @@ describe("Code generator", function () {
     it("Directives", function () {
       test("\"use strict\"");
       test("\"use\\u0020strict\"");
-      testShift("\"use\\u0020strict\"", new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use strict")], [])));
+      testShift("\"use\\u0020strict\"",
+          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use strict")], [])));
       test("\"use strict\"");
-      testShift(";\"use strict\"", statement(new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict", "\'use strict\'"))));
+      testShift("(\"use strict\")",
+          statement(new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict", "\'use strict\'"))));
+      testShift("(\"use strict\");;",
+          new Shift.Script(new Shift.FunctionBody([],
+              [new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict", "\'use strict\'")), new EmptyStatement()])));
     });
 
     it("ArrayExpression", function () {
@@ -362,19 +367,19 @@ describe("Code generator", function () {
       var EMPTY = new EmptyStatement();
 
       var MISSING_ELSE = new IfStatement(IDENT, EMPTY, null);
-      testShift("if(a){a:if(a);}else;",
+      test("if(a){a:if(a);}else;",
           statement(new IfStatement(IDENT, new LabeledStatement(new Identifier("a"), MISSING_ELSE), EMPTY)));
-      testShift("if(a){if(a);else if(a);}else;",
+      test("if(a){if(a);else if(a);}else;",
           statement(new IfStatement(IDENT, new IfStatement(IDENT, EMPTY, MISSING_ELSE), EMPTY)));
-      testShift("if(a){if(a);}else;",
+      test("if(a){if(a);}else;",
           statement(new IfStatement(IDENT, MISSING_ELSE, EMPTY)));
-      testShift("if(a){while(a)if(a);}else;",
+      test("if(a){while(a)if(a);}else;",
           statement(new IfStatement(IDENT, new WhileStatement(IDENT, MISSING_ELSE), EMPTY)));
-      testShift("if(a){with(a)if(a);}else;",
+      test("if(a){with(a)if(a);}else;",
           statement(new IfStatement(IDENT, new WithStatement(IDENT, MISSING_ELSE), EMPTY)));
-      testShift("if(a){for(;;)if(a);}else;",
+      test("if(a){for(;;)if(a);}else;",
           statement(new IfStatement(IDENT, new ForStatement(null, null, null, MISSING_ELSE), EMPTY)));
-      testShift("if(a){for(a in a)if(a);}else;",
+      test("if(a){for(a in a)if(a);}else;",
           statement(new IfStatement(IDENT, new ForInStatement(IDENT, IDENT, MISSING_ELSE), EMPTY)));
     });
 

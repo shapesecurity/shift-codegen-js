@@ -1,4 +1,4 @@
-import reduce, {Reducer} from "shift-reducer";
+import reduce from "shift-reducer";
 import * as objectAssign from "object-assign";
 import {TokenStream} from "./token_stream";
 
@@ -366,7 +366,7 @@ function semiOp() {
 
 function parenToAvoidBeingDirective(element, original) {
   if (element && element.type === "ExpressionStatement" && element.expression.type === "LiteralStringExpression") {
-    return seq(semiOp(), original);
+    return seq(paren(original.children[0]), semiOp());
   }
   return original;
 }
@@ -375,7 +375,7 @@ function getAssignmentExpr(state) {
   return state ? (state.containsGroup ? paren(state) : state) : empty();
 }
 
-class CodeGen extends Reducer {
+class CodeGen {
 
   reduceScript(node, body) {
     return body;
