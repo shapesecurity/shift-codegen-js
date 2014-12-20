@@ -20,7 +20,7 @@ npm install shift-codegen
 ## Usage
 
 ```js
-import codegen from "shift-codegen"
+import codegen from "shift-codegen";
 let programSource = codegen(/* Shift format AST */);
 ```
 
