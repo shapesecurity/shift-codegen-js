@@ -88,7 +88,9 @@ describe("Code generator", function () {
       test2("({a:1})", "({a:1,})");
       test("({}.a--)");
       test2("({1:1})", "({1.0:1})");
-      test2("({a:b})", "({a:b})");
+      test("({a:b})");
+      test("({\"a\":b})");
+      test("({\" \":b})");
       test("({get a(){;}})");
       test("({set a(param){;}})");
       test("({get a(){;},set a(param){;},b:1})");
