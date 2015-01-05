@@ -593,7 +593,7 @@ class CodeGen {
     if (node.kind == "number" || node.kind == "identifier") {
       return t(node.value.toString());
     }
-    return t(Utils.escapeStringLiteral(node.value));
+    return t(JSON.stringify(node.value));
   }
 
   reduceReturnStatement(node, argument) {
