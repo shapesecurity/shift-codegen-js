@@ -388,14 +388,19 @@ class CodeGen {
   }
 
   reduceAssignmentExpression(node, binding, expression) {
+    let leftCode = binding;
     let rightCode = expression;
     let containsIn = expression.containsIn;
     let startsWithFunctionOrCurly = binding.startsWithFunctionOrCurly;
+    if(getPrecedence(node.binding) < Precedence.New) {
+      leftCode = paren(leftCode);
+      startsWithFunctionOrCurly = false;
+    }
     if (getPrecedence(node.expression) < getPrecedence(node)) {
       rightCode = paren(rightCode);
       containsIn = false;
     }
-    return objectAssign(seq(binding, t(node.operator), rightCode), {containsIn, startsWithFunctionOrCurly});
+    return objectAssign(seq(leftCode, t(node.operator), rightCode), {containsIn, startsWithFunctionOrCurly});
   }
 
   reduceBinaryExpression(node, left, right) {
