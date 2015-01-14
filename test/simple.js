@@ -115,6 +115,15 @@ describe("Code generator", function () {
       test("a,b^=b");
       test("b^=b,b");
       test("b^=(b,b)");
+
+      test("a.b=0");
+      test("a[b]=0");
+      test("a()=0");
+      test("new a=0");
+      test("(!a)=0");
+      test("(typeof a)=0");
+      test("(a++)=0");
+      test("(a,b)=0");
     });
 
     it("Conditional", function () {
@@ -131,6 +140,7 @@ describe("Code generator", function () {
       test("a||(b?c:d)");
       test("a?b||c:d");
       test("a?b:c||d");
+
     });
 
     it("LogicalOr", function () {
@@ -197,6 +207,8 @@ describe("Code generator", function () {
       test("a+(b+b)");
       test("a+(b<<b)");
       test("a+b<<b");
+      test("(a<<b)+(c>>d)");
+      test2("a*b+c/d", "(a*b)+(c/d)");
     });
 
     it("Multiplicative", function () {
@@ -207,6 +219,8 @@ describe("Code generator", function () {
       test("a%(b%c)");
       test("a+b%c");
       test("(a+b)%c");
+      test("!a*b");
+      test("a*(b+c)");
     });
 
     it("Prefix", function () {
