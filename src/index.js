@@ -560,6 +560,10 @@ class CodeGen {
     return t("null");
   }
 
+  reduceLiteralInfinityExpression(node) {
+    return t("2e308");
+  }
+
   reduceLiteralNumericExpression(node) {
     return new NumberCodeRep(node.value);
   }

@@ -21,7 +21,7 @@
   "dependencies": {
     "esutils": "^1.1.6",
     "object-assign": "^2.0.0",
-    "shift-reducer": "^1.0.2"
+    "shift-reducer": "^1.0.3"
   },
   "devDependencies": {
     "6to5": "^1.15.0",
@@ -29,8 +29,8 @@
     "expect.js": "^0.3.1",
     "istanbul": "^0.3.5",
     "mocha": "^2.0.1",
-    "shift-ast": "^1.0.1",
-    "shift-parser": "^1.0.0"
+    "shift-ast": "^1.0.3",
+    "shift-parser": "^1.0.2"
   },
   "keywords": [
     "Shift",
