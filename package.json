@@ -8,15 +8,15 @@
     "type": "git",
     "url": "https://github.com/shapesecurity/shift-codegen-js.git"
   },
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "files": [
-    "lib"
+    "dist"
   ],
   "scripts": {
     "test": "npm run-script coverage",
-    "build": "6to5 --source-maps-inline --out-dir lib src",
+    "build": "6to5 --source-maps-inline --out-dir dist src",
     "coverage": "istanbul cover node_modules/.bin/_mocha -- --inline-diffs --check-leaks --ui tdd --reporter dot test",
-    "cjsify": "cjsify --export ShiftCodegen lib/index.js > shift-codegen.js"
+    "cjsify": "cjsify --export ShiftCodegen dist/index.js > shift-codegen.js"
   },
   "dependencies": {
     "esutils": "^1.1.6",
