@@ -69,6 +69,7 @@ function getPrecedence(node) {
     case "LiteralBooleanExpression":
     case "LiteralNullExpression":
     case "LiteralNumericExpression":
+    case "LiteralInfinityExpression":
     case "LiteralRegExpExpression":
     case "LiteralStringExpression":
     case "ObjectExpression":
