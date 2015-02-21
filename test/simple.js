@@ -43,18 +43,34 @@ describe("Code generator", function () {
     }
 
     function testShift(to, tree) {
+      if (arguments.length !== 2) {
+        throw new Error('Not supported');
+      }
       var dst = codeGen(tree);
       expect(dst).be(to);
       expect(codeGen(parse(to))).be(to);
       expect(parse(to)).eql(tree);
     }
 
+    function testShiftLoose(to, tree) {
+      if (arguments.length !== 2) {
+        throw new Error('Not supported');
+      }
+      expect(codeGen(tree)).eql(to);
+    }
+
     function test(source) {
+      if (arguments.length !== 1) {
+        throw new Error('Not supported');
+      }
       expect(codeGen(parse(source))).be(source);
       expect(parse(codeGen(parse(source)))).eql(parse(source));
     }
 
     function test2(expected, source) {
+      if (arguments.length !== 2) {
+        throw new Error('Not supported');
+      }
       expect(codeGen(parse(source))).be(expected);
       expect(codeGen(parse(expected))).be(expected);
     }
@@ -62,6 +78,8 @@ describe("Code generator", function () {
     it("Directives", function () {
       test("\"use strict\"");
       test("\"use\\u0020strict\"");
+      testShift("\"abc\"",
+          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("abc")], [])));
       testShift("\"use\\u0020strict\"",
           new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use strict")], [])));
       test("\"use strict\"");
@@ -75,8 +93,8 @@ describe("Code generator", function () {
     it("ArrayExpression", function () {
       test("[]");
       test("[a]");
-      test("[a]", "[a,]");
-      test("[a,b,c]", "[a,b,c,]");
+      test2("[a]", "[a,]");
+      test2("[a,b,c]", "[a,b,c,]");
       test("[a,,]");
       test("[a,,,]");
       test("[[a]]");
@@ -245,25 +263,27 @@ describe("Code generator", function () {
     it("Postfix", function () {
       test("a++");
       test("a--");
+      test("(a--)--");
     });
 
     it("NewCallMember", function () {
       test("new a");
       test("new a(a)");
       test("new a(a,b)");
+      test("new this.a");
       test("a()");
       test("a(a)");
       test("a(a,b)");
       test("a.a");
       test("a[a]");
-      test("new a", "new a()");
+      test2("new a", "new a()");
       test("new a(a)");
-      test("(new a).a", "new a().a");
+      test2("(new a).a", "new a().a");
       test("new a(a).v");
       test("new(a(a).v)");
       test("(new a)()");
-      test("(new new a(a).a.a).a", "(new (new a(a).a).a).a");
-      test("new((new a)().a)", "new((new a)()).a");
+      test2("(new new a(a).a.a).a", "(new (new a(a).a).a).a");
+      test2("new((new a)().a)", "new((new a)()).a");
       test("new a.a");
       test("new(a().a)");
     });
@@ -272,8 +292,8 @@ describe("Code generator", function () {
       test("0");
       test("1");
       test("2");
-      test(";\"a\"", "('a')");
-      test(";\"'\"", "('\\'')");
+      test2("(\"a\")", "('a')");
+      test2("(\"'\")", "('\\'')");
       test(";\"a\"");
       test(";\"\\\"\"");
       test("/a/");
@@ -286,7 +306,8 @@ describe("Code generator", function () {
       test("true");
       test("false");
       test("null");
-      test("null", "nul\\u006c");
+      test2("null", "nul\\u006c");
+      test("(\"\\b\\n\\r\\t\\v\\f\\\\\\u2028\\u2029日本\")");
       test("(function(){})");
     });
 
@@ -361,6 +382,10 @@ describe("Code generator", function () {
       test("for(var a=(3 in 5)in 1);");
       test("for(var a=(3 in 5==7 in 4)in 1);");
       test("for(var a=1+1 in 1);");
+      test("for((1+1)in 1);");
+      test("for((+1)in 1);");
+      test("for(new 1 in 1);");
+      test("for(1()in 1);");
     });
 
     it("ForStatement", function () {
@@ -386,19 +411,21 @@ describe("Code generator", function () {
       var EMPTY = new EmptyStatement();
 
       var MISSING_ELSE = new IfStatement(IDENT, EMPTY, null);
-      test("if(a){a:if(a);}else;",
-          statement(new IfStatement(IDENT, new LabeledStatement(new Identifier("a"), MISSING_ELSE), EMPTY)));
-      test("if(a){if(a);else if(a);}else;",
-          statement(new IfStatement(IDENT, new IfStatement(IDENT, EMPTY, MISSING_ELSE), EMPTY)));
-      test("if(a){if(a);}else;",
+      testShiftLoose("if(a){if(a);}else;",
           statement(new IfStatement(IDENT, MISSING_ELSE, EMPTY)));
-      test("if(a){while(a)if(a);}else;",
+      testShiftLoose("if(a){a:if(a);}else;",
+          statement(new IfStatement(IDENT, new LabeledStatement(new Identifier("a"), MISSING_ELSE), EMPTY)));
+      testShiftLoose("if(a){if(a);else if(a);}else;",
+          statement(new IfStatement(IDENT, new IfStatement(IDENT, EMPTY, MISSING_ELSE), EMPTY)));
+      testShiftLoose("if(a){if(a);}else;",
+          statement(new IfStatement(IDENT, MISSING_ELSE, EMPTY)));
+      testShiftLoose("if(a){while(a)if(a);}else;",
           statement(new IfStatement(IDENT, new WhileStatement(IDENT, MISSING_ELSE), EMPTY)));
-      test("if(a){with(a)if(a);}else;",
+      testShiftLoose("if(a){with(a)if(a);}else;",
           statement(new IfStatement(IDENT, new WithStatement(IDENT, MISSING_ELSE), EMPTY)));
-      test("if(a){for(;;)if(a);}else;",
+      testShiftLoose("if(a){for(;;)if(a);}else;",
           statement(new IfStatement(IDENT, new ForStatement(null, null, null, MISSING_ELSE), EMPTY)));
-      test("if(a){for(a in a)if(a);}else;",
+      testShiftLoose("if(a){for(a in a)if(a);}else;",
           statement(new IfStatement(IDENT, new ForInStatement(IDENT, IDENT, MISSING_ELSE), EMPTY)));
     });
 
