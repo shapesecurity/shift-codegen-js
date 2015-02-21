@@ -77,17 +77,27 @@ describe("Code generator", function () {
 
     it("Directives", function () {
       test("\"use strict\"");
+      test2("\"use strict\"", "'use strict'");
       test("\"use\\u0020strict\"");
+      test("\"use\\x20strict\"");
       testShift("\"abc\"",
           new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("abc")], [])));
-      testShift("\"use\\u0020strict\"",
-          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use strict")], [])));
+      testShift("\"use\\x20strict\"",
+          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use\\x20strict")], [])));
       test("\"use strict\"");
       testShift("(\"use strict\")",
           statement(new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict", "\'use strict\'"))));
       testShift("(\"use strict\");;",
           new Shift.Script(new Shift.FunctionBody([],
               [new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict", "\'use strict\'")), new EmptyStatement()])));
+      testShift("\"'\"",
+          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("'")], [])));
+      testShift("'\"'",
+          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("\"")], [])));
+      testShift("\"\\\"\"",
+          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("\\\"")], [])));
+      testShift("'\\\\\"'",
+          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("\\\\\"")], [])));
     });
 
     it("ArrayExpression", function () {
