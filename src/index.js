@@ -666,8 +666,8 @@ class CodeGen {
   }
 
   reduceUnknownDirective(node) {
-    var name = "use strict" === node.value ? "use\\u0020strict" : node.value;
-    return seq(t("\"" + name + "\""), semiOp());
+    let name = /^(?:[^"\\]|\\.)*"/.test(node.value) ? "'" + node.value + "'" : "\"" + node.value + "\"";
+    return seq(t(name), semiOp());
   }
 
   reduceUseStrictDirective(node) {
