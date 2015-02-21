@@ -14,9 +14,10 @@
   ],
   "scripts": {
     "test": "npm run-script coverage",
-    "build": "6to5 --source-maps-inline --out-dir dist src",
-    "coverage": "istanbul cover node_modules/.bin/_mocha -- --inline-diffs --check-leaks --ui tdd --reporter dot test",
-    "cjsify": "cjsify --export ShiftCodegen dist/index.js > shift-codegen.js"
+    "build": "babel --auxiliary-comment 'istanbul ignore next' --modules commonStrict --source-maps-inline --out-dir dist src",
+    "generate-coverage": "istanbul cover _mocha -- --inline-diffs --check-leaks --ui tdd --reporter dot --recursive test",
+    "check-coverage": "istanbul check-coverage --statements 100 --functions 100 --branches 100 --lines 100",
+    "cjsify": "cjsify --export ShiftCodegen lib/index.js > shift-codegen.js"
   },
   "dependencies": {
     "esutils": "^1.1.6",
@@ -24,13 +25,13 @@
     "shift-reducer": "^1.0.3"
   },
   "devDependencies": {
-    "6to5": "^1.15.0",
-    "commonjs-everywhere": "^0.9.7",
-    "expect.js": "^0.3.1",
-    "istanbul": "^0.3.5",
-    "mocha": "^2.0.1",
-    "shift-ast": "^1.0.3",
-    "shift-parser": "^1.0.2"
+    "babel": "4.3.0",
+    "commonjs-everywhere": "0.9.7",
+    "expect.js": "0.3.1",
+    "istanbul": "0.3.5",
+    "mocha": "2.0.1",
+    "shift-ast": "1.0.3",
+    "shift-parser": "1.0.3"
   },
   "keywords": [
     "Shift",

@@ -1,6 +1,13 @@
 language: node_js
-before_script:
+script:
   - curl https://raw.githubusercontent.com/shapesecurity/CLA/master/cla-travis.sh | bash
+  - export sums="$(md5sum dist/*)"
+  - npm run build
+  - '[ "$sums" == "$(md5sum dist/*)" ]'
+  - npm run generate-coverage
+  - npm run check-coverage
 node_js:
+  - "0.12"
   - "0.11"
   - "0.10"
+  - iojs

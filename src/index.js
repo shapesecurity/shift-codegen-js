@@ -72,6 +72,7 @@ function getPrecedence(node) {
     case "LiteralRegExpExpression":
     case "LiteralStringExpression":
     case "ObjectExpression":
+    case "ThisExpression":
       return Precedence.Primary;
 
     case "AssignmentExpression":
@@ -161,13 +162,13 @@ class CodeRep {
     this.startsWithFunctionOrCurly = false;
     this.endsWithMissingElse = false;
   }
-
-  emit(stream, noIn) {
-    throw new Error("Not implemented");
-  }
 }
 
 class Empty extends CodeRep {
+  constructor() {
+    super();
+  }
+
   emit() {}
 }
 
@@ -297,6 +298,10 @@ class CommaSep extends CodeRep {
 }
 
 class SemiOp extends CodeRep {
+  constructor() {
+    super();
+  }
+
   emit(ts) {
     ts.putOptionalSemi();
   }
@@ -493,8 +498,9 @@ class CodeGen {
   }
 
   reduceForInStatement(node, left, right, body) {
+    let leftP = node.left.type === 'VariableDeclaration' ? left : p(node.left, Precedence.New, left);
     return objectAssign(
-      seq(t("for"), paren(seq(noIn(markContainsIn(left)), t("in"), right)), body),
+      seq(t("for"), paren(seq(noIn(markContainsIn(leftP)), t("in"), right)), body),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
@@ -590,7 +596,7 @@ class CodeGen {
 
   reducePostfixExpression(node, operand) {
     return objectAssign(
-      seq(p(node.operand, getPrecedence(node), operand), t(node.operator)),
+      seq(p(node.operand, Precedence.New, operand), t(node.operator)),
       {startsWithFunctionOrCurly: operand.startsWithFunctionOrCurly});
   }
 
