@@ -329,6 +329,7 @@ describe("Code generator", function () {
       test("1e-9");
       test2("1e+308", "1e308");
       test2("2e308", "2e308");
+      test2("1+2e308", "1+2e308");
       test2("2e308", "3e308");
     });
 
