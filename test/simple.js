@@ -15,9 +15,9 @@
  */
 
 var expect = require("expect.js");
-var Shift = require("shift-ast");
 var codeGen = require("../")["default"];
-var parse = require("shift-parser")["default"];
+var parse = require("shift-parser").parseModule;
+var parseScript = require("shift-parser").parseScript;
 
 describe("API", function () {
   it("should exist", function () {
@@ -27,19 +27,9 @@ describe("API", function () {
 
 describe("Code generator", function () {
 
-  var IdentifierExpression = Shift.IdentifierExpression;
-  var EmptyStatement = Shift.EmptyStatement;
-  var IfStatement = Shift.IfStatement;
-  var LabeledStatement = Shift.LabeledStatement;
-  var Identifier = Shift.Identifier;
-  var WhileStatement = Shift.WhileStatement;
-  var WithStatement = Shift.WithStatement;
-  var ForStatement = Shift.ForStatement;
-  var ForInStatement = Shift.ForInStatement;
-
   describe("generates simple ECMAScript", function () {
     function statement(stmt) {
-      return new Shift.Script(new Shift.FunctionBody([], [stmt]));
+      return { type: "Script", body: { type: "FunctionBody", directives: [], statements: [stmt] } };
     }
 
     function testShift(to, tree) {
@@ -48,8 +38,8 @@ describe("Code generator", function () {
       }
       var dst = codeGen(tree);
       expect(dst).be(to);
-      expect(codeGen(parse(to))).be(to);
-      expect(parse(to)).eql(tree);
+      expect(codeGen(parseScript(to))).be(to);
+      expect(parseScript(to)).eql(tree);
     }
 
     function testShiftLoose(to, tree) {
@@ -75,29 +65,44 @@ describe("Code generator", function () {
       expect(codeGen(parse(expected))).be(expected);
     }
 
-    it("Directives", function () {
-      test("\"use strict\"");
-      test2("\"use strict\"", "'use strict'");
-      test("\"use\\u0020strict\"");
-      test("\"use\\x20strict\"");
-      testShift("\"abc\"",
-          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("abc")], [])));
+    it("Directive", function () {
+      testShift("\"use strict\"",
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "use strict" }], statements: [] } }
+      );
+      testShift("\"use\\u0020strict\"",
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "use\\u0020strict" }], statements: [] } }
+      );
       testShift("\"use\\x20strict\"",
-          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("use\\x20strict")], [])));
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "use\\x20strict" }], statements: [] } }
+      );
+      testShift("\"abc\"",
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "abc" }], statements: [] } }
+      );
+      testShift("\"use\\x20strict\"",
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "use\\x20strict" }], statements: [] } }
+      );
       test("\"use strict\"");
       testShift("(\"use strict\")",
-          statement(new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict", "\'use strict\'"))));
+        statement({ type: "ExpressionStatement", expression: { type: "LiteralStringExpression", value: "use strict" } })
+      );
       testShift("(\"use strict\");;",
-          new Shift.Script(new Shift.FunctionBody([],
-              [new Shift.ExpressionStatement(new Shift.LiteralStringExpression("use strict", "\'use strict\'")), new EmptyStatement()])));
+        { type: "Script", body: { type: "FunctionBody", directives: [], statements: [
+          { type: "ExpressionStatement", expression: { type: "LiteralStringExpression", value: "use strict" } },
+          { type: "EmptyStatement" }
+        ]}}
+      );
       testShift("\"'\"",
-          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("'")], [])));
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "'" }], statements: [] } }
+      );
       testShift("'\"'",
-          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("\"")], [])));
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "\"" }], statements: [] } }
+      );
       testShift("\"\\\"\"",
-          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("\\\"")], [])));
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "\\\"" }], statements: [] } }
+      );
       testShift("'\\\\\"'",
-          new Shift.Script(new Shift.FunctionBody([new Shift.UnknownDirective("\\\\\"")], [])));
+        { type: "Script", body: { type: "FunctionBody", directives: [{ type: "Directive", rawValue: "\\\\\"" }], statements: [] } }
+      );
     });
 
     it("ArrayExpression", function () {
@@ -111,18 +116,77 @@ describe("Code generator", function () {
       test("[(a,a)]");
     });
 
+    it("SpreadElement", function () {
+      test("[...a]");
+      test("[...a,...b]");
+      test("[...a,b,...c]");
+      test("[...a=b]");
+      test("[...(a,b)]");
+      test("f(...a)");
+    });
+
     it("ObjectExpression", function () {
       test("({})");
       test2("({a:1})", "({a:1,})");
       test("({}.a--)");
       test2("({1:1})", "({1.0:1})");
       test("({a:b})");
-      test("({\"a\":b})");
+      test2("({255:0})", "({0xFF:0})");
+      test2("({63:0})", "({0o77:0})");
+      test2("({3:0})", "({0b11:0})");
+      test2("({0:0})", "({0.:0})");
+      test2("({0:0})", "({.0:0})");
+      test2("({0.1:0})", "({.1:0})");
+      test("({[a]:b})");
+      test2("({a:b})", "({\"a\":b})");
       test("({\" \":b})");
       test("({get a(){;}})");
       test("({set a(param){;}})");
       test("({get a(){;},set a(param){;},b:1})");
       test("({a:(a,b)})");
+      test("({a})");
+    });
+
+    it("ArrayBinding", function () {
+      test("[]=0");
+      test("[...a]=0");
+      test("[a,...a]=0");
+      test("[a,a=0,...a]=0");
+      test("[,,]=0");
+      test("[,...a]=0");
+    });
+
+    it("BindingPropertyIdentifier", function () {
+      test("({a=0}=0)");
+    });
+
+    it("BindingPropertyProperty", function () {
+      test("({a:b}=0)");
+    });
+
+    it("BindingWithDefault", function () {
+      test("[a=0]=0");
+      test("({a:b=0}=0)");
+    });
+
+    it("ClassDeclaration", function () {
+      test("class A{}");
+      test("class A extends B{}");
+    });
+
+    it("ClassExpression", function () {
+      test("(class{})");
+      test("(class A{})");
+      test("(class A extends B{})");
+      test("(class extends B{})");
+    });
+
+    it("ClassElement", function () {
+      test("(class{a(){}})");
+      test("(class{*a(){}})");
+      test("(class{static a(){}})");
+      test("(class{static*a(){}})");
+      test("(class{constructor(){}})");
     });
 
     it("Sequence", function () {
@@ -146,12 +210,6 @@ describe("Code generator", function () {
 
       test("a.b=0");
       test("a[b]=0");
-      test("a()=0");
-      test("new a=0");
-      test("(!a)=0");
-      test("(typeof a)=0");
-      test("(a++)=0");
-      test("(a,b)=0");
     });
 
     it("Conditional", function () {
@@ -168,7 +226,6 @@ describe("Code generator", function () {
       test("a||(b?c:d)");
       test("a?b||c:d");
       test("a?b:c||d");
-
     });
 
     it("LogicalOr", function () {
@@ -251,14 +308,14 @@ describe("Code generator", function () {
       test("a*(b+c)");
     });
 
-    it("Prefix", function () {
+    it("PrefixExpression", function () {
       test("+a");
       test("-a");
       test("!a");
       test("~a");
       test("typeof a");
       test("void a");
-      test("delete a");
+      test("delete a.b");
       test("++a");
       test("--a");
       test("+ ++a");
@@ -266,14 +323,14 @@ describe("Code generator", function () {
       test("a+ +a");
       test("a-a");
       test("typeof-a");
+      test("!a++");
       test("!!a");
       test("!!(a+a)");
     });
 
-    it("Postfix", function () {
+    it("PostfixExpression", function () {
       test("a++");
       test("a--");
-      test("(a--)--");
     });
 
     it("NewCallMember", function () {
@@ -298,14 +355,7 @@ describe("Code generator", function () {
       test("new(a().a)");
     });
 
-    it("Primary", function () {
-      test("0");
-      test("1");
-      test("2");
-      test2("(\"a\")", "('a')");
-      test2("(\"'\")", "('\\'')");
-      test(";\"a\"");
-      test(";\"\\\"\"");
+    it("LiteralRegExpExpression", function () {
       test("/a/");
       test("/a/i");
       test("/a/ig");
@@ -313,15 +363,41 @@ describe("Code generator", function () {
       test("/a\\r/ig");
       test("/a\\r/ instanceof 3");
       test("/a\\r/g instanceof 3");
-      test("true");
-      test("false");
-      test("null");
-      test2("null", "nul\\u006c");
-      test("(\"\\b\\n\\r\\t\\v\\f\\\\\\u2028\\u2029日本\")");
-      test("(function(){})");
     });
 
-    it("FloatingPoint", function () {
+    it("LiteralBooleanExpression", function () {
+      test("true");
+      test("false");
+    });
+
+    it("LiteralNullExpression", function () {
+      test("null");
+      test2("null", "nul\\u006c");
+    });
+
+    it("FunctionDeclaration", function () {
+      test("function f(){}");
+      test("function*f(){}");
+      test("function f(a){}");
+      test("function f(a,b){}");
+      test("function f(a,b,...rest){}");
+    });
+
+    it("FunctionExpression", function () {
+      test("(function(){})");
+      test("(function f(){})");
+      test("(function*(){})");
+      test("(function*f(){})");
+    });
+
+    it("LiteralNumericExpression", function () {
+      test("0");
+      test2("0", "0x0");
+      test2("0", "0o0");
+      test2("0", "0b0");
+      test("1");
+      test("2");
+      // floats
       test("1.1.valueOf()");
       test("15..valueOf()");
       test("1..valueOf()");
@@ -338,9 +414,24 @@ describe("Code generator", function () {
       test("1e-8");
       test("1e-9");
       test2("1e+308", "1e308");
+    });
+
+    it("LiteralInfinityExpression", function () {
       test2("2e308", "2e308");
       test2("1+2e308", "1+2e308");
       test2("2e308", "3e308");
+    });
+
+    it("LiteralStringExpression", function () {
+      test("\"\"");
+      test2("\"\"", "''");
+      test2("\"a\"", "'a'");
+      test2("'\"'", "\"\\\"\"");
+      test2("\"a\"", "'a'");
+      test2("\"'\"", "'\\''");
+      test("\"a\"");
+      test("'\"'");
+      test("\"\\b\\n\\r\\t\\v\\f\\\\\\\"'\\u2028\\u2029日本\"");
     });
 
     it("BlockStatement", function () {
@@ -389,14 +480,7 @@ describe("Code generator", function () {
 
     it("ForInStatement", function () {
       test("for(var a in 1);");
-      test("for(var a=3 in 1);");
-      test("for(var a=(3 in 5)in 1);");
-      test("for(var a=(3 in 5==7 in 4)in 1);");
-      test("for(var a=1+1 in 1);");
-      test("for((1+1)in 1);");
-      test("for((+1)in 1);");
-      test("for(new 1 in 1);");
-      test("for(1()in 1);");
+      test("for(a in 1);");
     });
 
     it("ForStatement", function () {
@@ -418,26 +502,31 @@ describe("Code generator", function () {
       test("if(a);else{}");
       test("if(a){}else{}");
       test("if(a)if(a){}else{}else{}");
-      var IDENT = new IdentifierExpression(new Identifier("a"));
-      var EMPTY = new EmptyStatement();
+      var IDENT = { type: "IdentifierExpression", name: "a" };
+      var EMPTY = { type: "EmptyStatement" };
 
-      var MISSING_ELSE = new IfStatement(IDENT, EMPTY, null);
+      var MISSING_ELSE = { type: "IfStatement", test: IDENT, consequent: EMPTY, alternate: null };
       testShiftLoose("if(a){if(a);}else;",
-          statement(new IfStatement(IDENT, MISSING_ELSE, EMPTY)));
+        statement({ type: "IfStatement", test: IDENT, consequent: MISSING_ELSE, alternate: EMPTY })
+      );
       testShiftLoose("if(a){a:if(a);}else;",
-          statement(new IfStatement(IDENT, new LabeledStatement(new Identifier("a"), MISSING_ELSE), EMPTY)));
+        statement({ type: "IfStatement", test: IDENT, consequent: { type: "LabeledStatement", label: "a", body: MISSING_ELSE }, alternate: EMPTY })
+      );
       testShiftLoose("if(a){if(a);else if(a);}else;",
-          statement(new IfStatement(IDENT, new IfStatement(IDENT, EMPTY, MISSING_ELSE), EMPTY)));
-      testShiftLoose("if(a){if(a);}else;",
-          statement(new IfStatement(IDENT, MISSING_ELSE, EMPTY)));
+        statement({ type: "IfStatement", test: IDENT, consequent: { type: "IfStatement", test: IDENT, consequent: EMPTY, alternate: MISSING_ELSE }, alternate: EMPTY })
+      );
       testShiftLoose("if(a){while(a)if(a);}else;",
-          statement(new IfStatement(IDENT, new WhileStatement(IDENT, MISSING_ELSE), EMPTY)));
+        statement({ type: "IfStatement", test: IDENT, consequent: { type: "WhileStatement", test: IDENT, body: MISSING_ELSE }, alternate: EMPTY })
+      );
       testShiftLoose("if(a){with(a)if(a);}else;",
-          statement(new IfStatement(IDENT, new WithStatement(IDENT, MISSING_ELSE), EMPTY)));
+        statement({ type: "IfStatement", test: IDENT, consequent: { type: "WithStatement", object: IDENT, body: MISSING_ELSE }, alternate: EMPTY })
+      );
       testShiftLoose("if(a){for(;;)if(a);}else;",
-          statement(new IfStatement(IDENT, new ForStatement(null, null, null, MISSING_ELSE), EMPTY)));
+        statement({ type: "IfStatement", test: IDENT, consequent: { type: "ForStatement", init: null, test: null, update: null, body: MISSING_ELSE }, alternate: EMPTY })
+      );
       testShiftLoose("if(a){for(a in a)if(a);}else;",
-          statement(new IfStatement(IDENT, new ForInStatement(IDENT, IDENT, MISSING_ELSE), EMPTY)));
+        statement({ type: "IfStatement", test: IDENT, consequent: { type: "ForInStatement", left: IDENT, right: IDENT, body: MISSING_ELSE }, alternate: EMPTY })
+      );
     });
 
     it("LabeledStatement", function () {
@@ -485,11 +574,77 @@ describe("Code generator", function () {
     });
 
     it("WithStatement", function () {
-      test("with(0);");
-      test("with(0)with(0);");
+      testShift("with(null);",
+        statement({ type: "WithStatement", object: { type: "LiteralNullExpression" }, body: { type: "EmptyStatement" }})
+      );
     });
 
-    it("Script", function () {
+    it("Import", function () {
+      test("import\"m\"");
+      test("import a from\"m\"");
+      test("import{a}from\"m\"");
+      test("import{a,b}from\"m\"");
+      test("import a,{b}from\"m\"");
+      test("import a,{b,c}from\"m\"");
+      test2("import\"m\"", "import {} from \"m\"");
+      test2("import a from\"m\"", "import a,{}from \"m\"");
+    });
+
+    it("ImportNamespace", function () {
+      test("import*as a from\"m\"");
+      test("import a,*as b from\"m\"");
+    });
+
+    it("ImportSpecifier", function () {
+      test("import{a}from\"m\"");
+      test("import{a as b}from\"m\"");
+      test("import{a,b}from\"m\"");
+      test("import{a,b as c}from\"m\"");
+      test("import{a as b,c}from\"m\"");
+      test("import{a as b,c as d}from\"m\"");
+    });
+
+    it("ExportAllFrom", function () {
+      test("export*from\"m\"");
+    });
+
+    it("ExportFrom", function () {
+      test("export{}from\"m\"");
+      test("let a;export{a}from\"m\"");
+      test("let a,b;export{a,b}from\"m\"");
+      test("export{}");
+      test("let a;export{a}");
+      test("let a,b;export{a,b}");
+    });
+
+    it("Export", function () {
+      test("export var a");
+      test("export var a=0");
+      test("export var a,b");
+      test("export var a=0,b=0");
+      test("export const a=0");
+      test("export let a");
+    });
+
+    it("ExportDefault", function () {
+      test("export default function f(){}");
+      test("export default function*f(){}");
+      test("export default class A{}");
+      test("export default 0");
+      test("export default(function(){})");
+      test("export default{}");
+    });
+
+    it("ExportSpecifier", function () {
+      test("let a;export{a}");
+      test("let a,b;export{a as b}");
+      test("let a,b;export{a,b}");
+      test("let a,b,c;export{a,b as c}");
+      test("let a,b,c;export{a as b,c}");
+      test("let a,b,c,d;export{a as b,c as d}");
+    });
+
+    it("Module", function () {
       test("");
     });
 

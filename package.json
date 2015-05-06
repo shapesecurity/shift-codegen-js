@@ -20,18 +20,17 @@
     "cjsify": "cjsify --export ShiftCodegen lib/index.js > shift-codegen.js"
   },
   "dependencies": {
-    "esutils": "^1.1.6",
+    "esutils": "^2.0.2",
     "object-assign": "^2.0.0",
-    "shift-reducer": "^1.0.3"
+    "shift-reducer": "^2.0.3"
   },
   "devDependencies": {
-    "babel": "4.3.0",
+    "babel": "5.2.15",
     "commonjs-everywhere": "0.9.7",
     "expect.js": "0.3.1",
-    "istanbul": "0.3.5",
-    "mocha": "2.0.1",
-    "shift-ast": "1.0.3",
-    "shift-parser": "1.0.4"
+    "istanbul": "0.3.13",
+    "mocha": "2.2.4",
+    "shift-parser": "2.0.0"
   },
   "keywords": [
     "Shift",

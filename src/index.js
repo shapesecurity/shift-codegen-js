@@ -1,5 +1,6 @@
 import reduce from "shift-reducer";
 import * as objectAssign from "object-assign";
+import {keyword} from "esutils";
 import {TokenStream} from "./token_stream";
 
 export default function codeGen(script) {
@@ -8,6 +9,8 @@ export default function codeGen(script) {
   rep.emit(ts);
   return ts.result;
 }
+
+const NUMBER = /^(?:(?:\.\d+|\d+(?:\.\d*)?)(?:[eE][+-]?\d+)?|0[xX][a-fA-F]+|0[oO][0-7]+|0[bB][01]+)$/;
 
 const Precedence = {
   Sequence: 0,
@@ -109,10 +112,23 @@ function getPrecedence(node) {
 
 function escapeStringLiteral(stringValue) {
   let result = "";
-  result += ('"');
+  let nSingle = 0, nDouble = 0;
+  for (let i = 0, l = stringValue.length; i < l; ++i) {
+    let ch = stringValue[i];
+    if (ch === "\"") {
+      ++nDouble;
+    } else if (ch === "'") {
+      ++nSingle;
+    }
+  }
+  let delim = nDouble > nSingle ? "'" : "\"";
+  result += delim;
   for (let i = 0; i < stringValue.length; i++) {
     let ch = stringValue.charAt(i);
     switch (ch) {
+      case delim:
+        result += "\\" + delim;
+        break;
       case "\b":
         result += "\\b";
         break;
@@ -131,9 +147,6 @@ function escapeStringLiteral(stringValue) {
       case "\r":
         result += "\\r";
         break;
-      case "\"":
-        result += "\\\"";
-        break;
       case "\\":
         result += "\\\\";
         break;
@@ -148,8 +161,8 @@ function escapeStringLiteral(stringValue) {
         break;
     }
   }
-  result += '"';
-  return result.toString();
+  result += delim;
+  return result;
 }
 
 function p(node, precedence, a) {
@@ -160,7 +173,9 @@ class CodeRep {
   constructor() {
     this.containsIn = false;
     this.containsGroup = false;
-    this.startsWithFunctionOrCurly = false;
+    // restricted tokens: {, function, class
+    this.startsWithCurly = false;
+    this.startsWithFunctionOrClass = false;
     this.endsWithMissingElse = false;
   }
 }
@@ -381,7 +396,7 @@ function getAssignmentExpr(state) {
 
 class CodeGen {
 
-  reduceArrayExpression(node, elements) {
+  reduceArrayExpression(node, {elements}) {
     if (elements.length === 0) {
       return bracket(empty());
     }
@@ -393,29 +408,32 @@ class CodeGen {
     return bracket(content);
   }
 
-  reduceAssignmentExpression(node, binding, expression) {
+  reduceSpreadElement(node, {expression}) {
+    return seq(t("..."), p(node.expression, Precedence.Assignment, expression));
+  }
+
+  reduceAssignmentExpression(node, {binding, expression}) {
     let leftCode = binding;
     let rightCode = expression;
     let containsIn = expression.containsIn;
-    let startsWithFunctionOrCurly = binding.startsWithFunctionOrCurly;
-    if(getPrecedence(node.binding) < Precedence.New) {
-      leftCode = paren(leftCode);
-      startsWithFunctionOrCurly = false;
-    }
+    let startsWithCurly = binding.startsWithCurly;
+    let startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
     if (getPrecedence(node.expression) < getPrecedence(node)) {
       rightCode = paren(rightCode);
       containsIn = false;
     }
-    return objectAssign(seq(leftCode, t(node.operator), rightCode), {containsIn, startsWithFunctionOrCurly});
+    return objectAssign(seq(leftCode, t(node.operator), rightCode), {containsIn, startsWithCurly, startsWithFunctionOrClass});
   }
 
-  reduceBinaryExpression(node, left, right) {
+  reduceBinaryExpression(node, {left, right}) {
     let leftCode = left;
-    let startsWithFunctionOrCurly = left.startsWithFunctionOrCurly;
+    let startsWithCurly = left.startsWithCurly;
+    let startsWithFunctionOrClass = left.startsWithFunctionOrClass;
     let leftContainsIn = left.containsIn;
     if (getPrecedence(node.left) < getPrecedence(node)) {
       leftCode = paren(leftCode);
-      startsWithFunctionOrCurly = false;
+      startsWithCurly = false;
+      startsWithFunctionOrClass = false;
       leftContainsIn = false;
     }
     let rightCode = right;
@@ -429,64 +447,134 @@ class CodeGen {
       {
         containsIn: leftContainsIn || rightContainsIn || node.operator === "in",
         containsGroup: node.operator == ",",
-        startsWithFunctionOrCurly
+        startsWithCurly,
+        startsWithFunctionOrClass
       });
   }
 
-  reduceBlock(node, statements) {
+  reduceBindingWithDefault(node, {binding, init}) {
+    return seq(binding, t("="), init);
+  }
+
+  reduceBindingIdentifier(node) {
+    return t(node.name);
+  }
+
+  reduceArrayBinding(node, {elements, restElement}) {
+    let content;
+    if (elements.length === 0) {
+      content = restElement == null ? empty() : seq(t("..."), restElement);
+    } else {
+      elements = elements.concat(restElement == null ? [] : [seq(t("..."), restElement)]);
+      content = commaSep(elements.map(getAssignmentExpr));
+      if (elements.length > 0 && elements[elements.length - 1] == null) {
+        content = seq(content, t(","));
+      }
+    }
+    return bracket(content);
+  }
+
+  reduceObjectBinding(node, {properties}) {
+    let state = brace(commaSep(properties));
+    state.startsWithCurly = true;
+    return state;
+  }
+
+  reduceBindingPropertyIdentifier(node, {binding, init}) {
+    return seq(binding, t("="), init);
+  }
+
+  reduceBindingPropertyProperty(node, {name, binding}) {
+    return seq(name, t(":"), binding);
+  }
+
+  reduceBlock(node, {statements}) {
     return brace(seq(...statements));
   }
 
-  reduceBlockStatement(node, block) {
+  reduceBlockStatement(node, {block}) {
     return block;
   }
 
-  reduceBreakStatement(node, label) {
-    return seq(t("break"), label || empty(), semiOp());
+  reduceBreakStatement(node, {label}) {
+    return seq(t("break"), label ? t(label) : empty(), semiOp());
   }
 
-  reduceCallExpression(node, callee, args) {
+  reduceCallExpression(node, {callee, arguments: args}) {
     return objectAssign(
       seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(args))),
-      {startsWithFunctionOrCurly: callee.startsWithFunctionOrCurly});
+      {startsWithCurly: callee.startsWithCurly, startsWithFunctionOrClass: callee.startsWithFunctionOrClass});
   }
 
-  reduceCatchClause(node, param, body) {
-    return seq(t("catch"), paren(param), body);
+  reduceCatchClause(node, {binding, body}) {
+    return seq(t("catch"), paren(binding), body);
   }
 
-  reduceComputedMemberExpression(node, object, expression) {
+  reduceClassDeclaration(node, {name, super: _super, elements}) {
+    let state = seq(t("class"), name);
+    if (_super != null) {
+      state = seq(state, t("extends"), _super);
+    }
+    state = seq(state, t("{"), ...elements, t("}"));
+    return state;
+  }
+
+  reduceClassExpression(node, {name, super: _super, elements}) {
+    let state = t("class");
+    if (name != null) {
+      state = seq(state, name);
+    }
+    if (_super != null) {
+      state = seq(state, t("extends"), _super);
+    }
+    state = seq(state, t("{"), ...elements, t("}"));
+    state.startsWithFunctionOrClass = true;
+    return state;
+  }
+
+  reduceClassElement(node, {method}) {
+    if (!node.isStatic) return method;
+    return seq(t("static"), method);
+  }
+
+  reduceComputedMemberExpression(node, {object, expression}) {
     return objectAssign(
       seq(p(node.object, getPrecedence(node), object), bracket(expression)),
-      {startsWithFunctionOrCurly: object.startsWithFunctionOrCurly});
+      {startsWithCurly: object.startsWithCurly, startsWithFunctionOrClass: object.startsWithFunctionOrClass});
   }
 
-  reduceConditionalExpression(node, test, consequent, alternate) {
+  reduceComputedPropertyName(node, {expression}) {
+    return bracket(expression);
+  }
+
+  reduceConditionalExpression(node, {test, consequent, alternate}) {
     let containsIn = test.containsIn || alternate.containsIn;
-    let startsWithFunctionOrCurly = test.startsWithFunctionOrCurly;
+    let startsWithCurly = test.startsWithCurly;
+    let startsWithFunctionOrClass = test.startsWithFunctionOrClass;
     return objectAssign(
       seq(
         p(node.test, Precedence.LogicalOR, test), t("?"),
         p(node.consequent, Precedence.Assignment, consequent), t(":"),
         p(node.alternate, Precedence.Assignment, alternate)), {
           containsIn,
-          startsWithFunctionOrCurly
+          startsWithCurly,
+          startsWithFunctionOrClass
         });
   }
 
-  reduceContinueStatement(node, label) {
-    return seq(t("continue"), label || empty(), semiOp());
+  reduceContinueStatement(node, {label}) {
+    return seq(t("continue"), label ? t(label) : empty(), semiOp());
   }
 
-  reduceDataProperty(node, key, value) {
-    return seq(key, t(":"), getAssignmentExpr(value));
+  reduceDataProperty(node, {name, expression}) {
+    return seq(name, t(":"), getAssignmentExpr(expression));
   }
 
   reduceDebuggerStatement(node) {
     return seq(t("debugger"), semiOp());
   }
 
-  reduceDoWhileStatement(node, body, test) {
+  reduceDoWhileStatement(node, {body, test}) {
     return seq(t("do"), body, t("while"), paren(test), semiOp());
   }
 
@@ -494,18 +582,18 @@ class CodeGen {
     return semi();
   }
 
-  reduceExpressionStatement(node, expression) {
-    return seq((expression.startsWithFunctionOrCurly ? paren(expression) : expression), semiOp());
+  reduceExpressionStatement(node, {expression}) {
+    return seq((expression.startsWithCurly || expression.startsWithFunctionOrClass ? paren(expression) : expression), semiOp());
   }
 
-  reduceForInStatement(node, left, right, body) {
+  reduceForInStatement(node, {left, right, body}) {
     let leftP = node.left.type === 'VariableDeclaration' ? left : p(node.left, Precedence.New, left);
     return objectAssign(
       seq(t("for"), paren(seq(noIn(markContainsIn(leftP)), t("in"), right)), body),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
-  reduceForStatement(node, init, test, update, body) {
+  reduceForStatement(node, {init, test, update, body}) {
     return objectAssign(
       seq(
         t("for"),
@@ -516,37 +604,37 @@ class CodeGen {
         });
   }
 
-  reduceFunctionBody(node, directives, sourceElements) {
-    if (sourceElements.length) {
-      sourceElements[0] = parenToAvoidBeingDirective(node.statements[0], sourceElements[0]);
+  reduceFunctionBody(node, {directives, statements}) {
+    if (statements.length) {
+      statements[0] = parenToAvoidBeingDirective(node.statements[0], statements[0]);
     }
-    return seq(...directives, ...sourceElements);
+    return seq(...directives, ...statements);
   }
 
-  reduceFunctionDeclaration(node, id, params, body) {
-    return seq(t("function"), id, paren(commaSep(params)), brace(body));
+  reduceFunctionDeclaration(node, {name, params, body}) {
+    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, params, brace(body));
   }
 
-  reduceFunctionExpression(node, id, params, body) {
-    const argBody = seq(paren(commaSep(params)), brace(body));
-    let state = seq(t("function"), id ? seq(id, argBody) : argBody);
-    state.startsWithFunctionOrCurly = true;
+  reduceFunctionExpression(node, {name, params, body}) {
+    const argBody = seq(params, brace(body));
+    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? seq(name, argBody) : argBody);
+    state.startsWithFunctionOrClass = true;
     return state;
   }
 
-  reduceGetter(node, key, body) {
-    return seq(t("get"), key, paren(empty()), brace(body));
+  reduceFormalParameters(node, {items, rest}) {
+    return paren(commaSep(items.concat(rest == null ? [] : [seq(t("..."), rest)]))) 
   }
 
-  reduceIdentifier(node) {
+  reduceGetter(node, {name, body}) {
+    return seq(t("get"), name, paren(empty()), brace(body));
+  }
+
+  reduceIdentifierExpression(node) {
     return t(node.name);
   }
 
-  reduceIdentifierExpression(node, name) {
-    return name;
-  }
-
-  reduceIfStatement(node, test, consequent, alternate) {
+  reduceIfStatement(node, {test, consequent, alternate}) {
     if (alternate && consequent.endsWithMissingElse) {
       consequent = brace(consequent);
     }
@@ -555,8 +643,60 @@ class CodeGen {
       {endsWithMissingElse: alternate ? alternate.endsWithMissingElse : true});
   }
 
-  reduceLabeledStatement(node, label, body) {
-    return objectAssign(seq(label, t(":"), body), {endsWithMissingElse: body.endsWithMissingElse});
+  reduceImport(node, {defaultBinding, namedImports}) {
+    let bindings = [];
+    if (defaultBinding != null) {
+      bindings.push(defaultBinding);
+    }
+    if (namedImports.length > 0) {
+      bindings.push(brace(commaSep(namedImports)));
+    }
+    if (bindings.length === 0) {
+      return seq(t("import"), t(escapeStringLiteral(node.moduleSpecifier)));
+    }
+    return seq(t("import"), commaSep(bindings), t("from"), t(escapeStringLiteral(node.moduleSpecifier)));
+  }
+
+  reduceImportNamespace(node, {defaultBinding, namespaceBinding}) {
+    return seq(
+      t("import"),
+      defaultBinding == null ? empty() : seq(defaultBinding, t(",")),
+      t("*"),
+      t("as"),
+      namespaceBinding,
+      t("from"),
+      t(escapeStringLiteral(node.moduleSpecifier))
+    );
+  }
+
+  reduceImportSpecifier(node, {binding}) {
+    if (node.name == null) return binding;
+    return seq(t(node.name), t("as"), binding);
+  }
+
+  reduceExportAllFrom(node) {
+    return seq(t("export"), t("*"), t("from"), t(escapeStringLiteral(node.moduleSpecifier)));
+  }
+
+  reduceExportFrom(node, {namedExports}) {
+    return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier))));
+  }
+
+  reduceExport(node, {declaration}) {
+    return seq(t("export"), declaration);
+  }
+
+  reduceExportDefault(node, {body}) {
+    return seq(t("export default"), body.startsWithFunctionOrClass ? paren(body) : body);
+  }
+
+  reduceExportSpecifier(node) {
+    if (node.name == null) return t(node.exportedName);
+    return seq(t(node.name), t("as"), t(node.exportedName));
+  }
+
+  reduceLabeledStatement(node, {label, body}) {
+    return objectAssign(seq(t(label + ":"), body), {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceLiteralBooleanExpression(node) {
@@ -576,113 +716,124 @@ class CodeGen {
   }
 
   reduceLiteralRegExpExpression(node) {
-    return t(node.value);
+    return t(`/${node.pattern}/${node.flags}`);
   }
 
   reduceLiteralStringExpression(node) {
     return t(escapeStringLiteral(node.value));
   }
 
-  reduceNewExpression(node, callee, args) {
+  reduceMethod(node, {name, params, body}) {
+    return seq(node.isGenerator ? t("*") : empty(), name, params, brace(body));
+  }
+
+  reduceModule(node, {items}) {
+    return seq(...items);
+  }
+
+  reduceNewExpression(node, {callee, arguments: args}) {
     let calleeRep = getPrecedence(node.callee) == Precedence.Call ? paren(callee) :
       p(node.callee, getPrecedence(node), callee);
     return seq(t("new"), calleeRep, args.length === 0 ? empty() : paren(commaSep(args)));
   }
 
-  reduceObjectExpression(node, properties) {
+  reduceObjectExpression(node, {properties}) {
     let state = brace(commaSep(properties));
-    state.startsWithFunctionOrCurly = true;
+    state.startsWithCurly = true;
     return state;
   }
 
-  reducePostfixExpression(node, operand) {
+  reducePostfixExpression(node, {operand}) {
     return objectAssign(
       seq(p(node.operand, Precedence.New, operand), t(node.operator)),
-      {startsWithFunctionOrCurly: operand.startsWithFunctionOrCurly});
+      {startsWithCurly: operand.startsWithCurly, startsWithFunctionOrClass: operand.startsWithFunctionOrClass});
   }
 
-  reducePrefixExpression(node, operand) {
+  reducePrefixExpression(node, {operand}) {
     return seq(t(node.operator), p(node.operand, getPrecedence(node), operand));
   }
 
-  reducePropertyName(node) {
-    if (node.kind == "number" || node.kind == "identifier") {
-      return t(node.value.toString());
-    }
-    return t(JSON.stringify(node.value));
+  reduceReturnStatement(node, {expression}) {
+    return seq(t("return"), expression || empty(), semiOp());
   }
 
-  reduceReturnStatement(node, argument) {
-    return seq(t("return"), argument || empty(), semiOp());
-  }
-
-  reduceScript(node, body) {
+  reduceScript(node, {body}) {
     return body;
   }
 
-  reduceSetter(node, key, parameter, body) {
-    return seq(t("set"), key, paren(parameter), brace(body));
+  reduceSetter(node, {name, param, body}) {
+    return seq(t("set"), name, paren(param), brace(body));
   }
 
-  reduceStaticMemberExpression(node, object, property) {
-    const state = seq(p(node.object, getPrecedence(node), object), t("."), property);
-    state.startsWithFunctionOrCurly = object.startsWithFunctionOrCurly;
+  reduceShorthandProperty(node) {
+    return t(node.name);
+  }
+
+  reduceStaticMemberExpression(node, {object, property}) {
+    const state = seq(p(node.object, getPrecedence(node), object), t("."), t(property));
+    state.startsWithCurly = object.startsWithCurly;
+    state.startsWithFunctionOrClass = object.startsWithFunctionOrClass;
     return state;
   }
 
-  reduceSwitchCase(node, test, consequent) {
+  reduceStaticPropertyName(node) {
+    if (keyword.isIdentifierNameES6(node.value)) {
+      return t(node.value);
+    } else if (NUMBER.test(node.value)) {
+      return t("" + parseFloat(node.value));
+    }
+    return t(escapeStringLiteral(node.value));
+  }
+
+  reduceSwitchCase(node, {test, consequent}) {
     return seq(t("case"), test, t(":"), seq(...consequent));
   }
 
-  reduceSwitchDefault(node, consequent) {
-    return seq(t("default"), t(":"), seq(...consequent));
+  reduceSwitchDefault(node, {consequent}) {
+    return seq(t("default:"), seq(...consequent));
   }
 
-  reduceSwitchStatement(node, discriminant, cases) {
+  reduceSwitchStatement(node, {discriminant, cases}) {
     return seq(t("switch"), paren(discriminant), brace(seq(...cases)));
   }
 
-  reduceSwitchStatementWithDefault(node, discriminant, cases, defaultCase, postDefaultCases) {
+  reduceSwitchStatementWithDefault(node, {discriminant, preDefaultCases, defaultCase, postDefaultCases}) {
     return seq(
       t("switch"),
       paren(discriminant),
-      brace(seq(...cases, defaultCase, ...postDefaultCases)));
+      brace(seq(...preDefaultCases, defaultCase, ...postDefaultCases)));
   }
 
   reduceThisExpression(node) {
     return t("this");
   }
 
-  reduceThrowStatement(node, argument) {
-    return seq(t("throw"), argument, semiOp());
+  reduceThrowStatement(node, {expression}) {
+    return seq(t("throw"), expression, semiOp());
   }
 
-  reduceTryCatchStatement(node, block, catchClause) {
-    return seq(t("try"), block, catchClause);
+  reduceTryCatchStatement(node, {body, catchClause}) {
+    return seq(t("try"), body, catchClause);
   }
 
-  reduceTryFinallyStatement(node, block, catchClause, finalizer) {
-    return seq(t("try"), block, catchClause || empty(), t("finally"), finalizer);
+  reduceTryFinallyStatement(node, {body, catchClause, finalizer}) {
+    return seq(t("try"), body, catchClause || empty(), t("finally"), finalizer);
   }
 
-  reduceUnknownDirective(node) {
-    let name = /^(?:[^"\\]|\\.)*"/.test(node.value) ? "'" + node.value + "'" : "\"" + node.value + "\"";
-    return seq(t(name), semiOp());
+  reduceDirective(node) {
+    let delim = /^(?:[^"\\]|\\.)*$/.test(node.rawValue) ? "\"" : "'";
+    return seq(t(delim + node.rawValue + delim), semiOp());
   }
 
-  reduceUseStrictDirective(node) {
-    return seq(t("\"use strict\""), semiOp());
-  }
-
-  reduceVariableDeclaration(node, declarators) {
+  reduceVariableDeclaration(node, {declarators}) {
     return seq(t(node.kind), commaSep(declarators));
   }
 
-  reduceVariableDeclarationStatement(node, declaration) {
+  reduceVariableDeclarationStatement(node, {declaration}) {
     return seq(declaration, semiOp());
   }
 
-  reduceVariableDeclarator(node, id, init) {
+  reduceVariableDeclarator(node, {binding, init}) {
     let containsIn = init && init.containsIn && !init.containsGroup;
     if (init) {
       if (init.containsGroup) {
@@ -691,14 +842,14 @@ class CodeGen {
         init = markContainsIn(init);
       }
     }
-    return objectAssign(new Init(id, init), {containsIn});
+    return objectAssign(new Init(binding, init), {containsIn});
   }
 
-  reduceWhileStatement(node, test, body) {
+  reduceWhileStatement(node, {test, body}) {
     return objectAssign(seq(t("while"), paren(test), body), {endsWithMissingElse: body.endsWithMissingElse});
   }
 
-  reduceWithStatement(node, object, body) {
+  reduceWithStatement(node, {object, body}) {
     return objectAssign(
       seq(t("with"), paren(object), body),
       {endsWithMissingElse: body.endsWithMissingElse});
