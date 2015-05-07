@@ -587,9 +587,19 @@ class CodeGen {
   }
 
   reduceForInStatement(node, {left, right, body}) {
-    let leftP = node.left.type === 'VariableDeclaration' ? left : p(node.left, Precedence.New, left);
+    let leftP = left;
+    switch (node.left.type) {
+      case "VariableDeclaration":
+        leftP = noIn(markContainsIn(left));
+        break;
+      case "BindingIdentifier":
+        if (node.left.name === "let") {
+          leftP = paren(left);
+        }
+        break;
+    }
     return objectAssign(
-      seq(t("for"), paren(seq(noIn(markContainsIn(leftP)), t("in"), right)), body),
+      seq(t("for"), paren(seq(leftP, t("in"), right)), body),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 

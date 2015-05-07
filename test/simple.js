@@ -57,6 +57,14 @@ describe("Code generator", function () {
       expect(parse(codeGen(parse(source)))).eql(parse(source));
     }
 
+    function testScript(source) {
+      if (arguments.length !== 1) {
+        throw new Error('Not supported');
+      }
+      expect(codeGen(parseScript(source))).be(source);
+      expect(parseScript(codeGen(parseScript(source)))).eql(parseScript(source));
+    }
+
     function test2(expected, source) {
       if (arguments.length !== 2) {
         throw new Error('Not supported');
@@ -480,6 +488,7 @@ describe("Code generator", function () {
 
     it("ForInStatement", function () {
       test("for(var a in 1);");
+      testScript("for((let)in 1);");
       test("for(a in 1);");
     });
 

@@ -10,10 +10,15 @@ var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_ag
     receiver = _x3; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 exports["default"] = codeGen;
+// istanbul ignore next
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
 
+// istanbul ignore next
+
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+
+// istanbul ignore next
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -833,8 +838,18 @@ var CodeGen = (function () {
       var right = _ref25.right;
       var body = _ref25.body;
 
-      var leftP = node.left.type === "VariableDeclaration" ? left : p(node.left, Precedence.New, left);
-      return objectAssign(seq(t("for"), paren(seq(noIn(markContainsIn(leftP)), t("in"), right)), body), { endsWithMissingElse: body.endsWithMissingElse });
+      var leftP = left;
+      switch (node.left.type) {
+        case "VariableDeclaration":
+          leftP = noIn(markContainsIn(left));
+          break;
+        case "BindingIdentifier":
+          if (node.left.name === "let") {
+            leftP = paren(left);
+          }
+          break;
+      }
+      return objectAssign(seq(t("for"), paren(seq(leftP, t("in"), right)), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
   }, {
     key: "reduceForStatement",
