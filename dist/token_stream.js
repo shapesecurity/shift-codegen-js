@@ -32,6 +32,26 @@ function numberDot(fragment) {
   return ".";
 }
 
+function renderNumber(n) {
+  var s;
+  if (n >= 1000 && n % 10 === 0) {
+    s = n.toString(10);
+    if (/[eE]/.test(s)) {
+      return s.replace(/[eE]\+/, "e");
+    }
+    return n.toString(10).replace(/0+$/, function (match) {
+      return "e" + match.length;
+    });
+  } else if (n % 1 === 0) {
+    if (n > 1000000000000000 && n < 100000000000000000000) {
+      return "0x" + n.toString(16).toUpperCase();
+    }
+    return n.toString(10).replace(/[eE]\+/, "e");
+  } else {
+    return n.toString(10).replace(/^0\./, ".").replace(/[eE]\+/, "e");
+  }
+}
+
 var TokenStream = (function () {
   function TokenStream() {
     _classCallCheck(this, TokenStream);
@@ -45,7 +65,7 @@ var TokenStream = (function () {
   _createClass(TokenStream, [{
     key: "putNumber",
     value: function putNumber(number) {
-      var tokenStr = number.toString();
+      var tokenStr = renderNumber(number);
       this.put(tokenStr);
       this.lastNumber = tokenStr;
     }

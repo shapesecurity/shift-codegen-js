@@ -10,8 +10,6 @@ export default function codeGen(script) {
   return ts.result;
 }
 
-const NUMBER = /^(?:(?:\.\d+|\d+(?:\.\d*)?)(?:[eE][+-]?\d+)?|0[xX][a-fA-F]+|0[oO][0-7]+|0[bB][01]+)$/;
-
 const Precedence = {
   Sequence: 0,
   Yield: 1,
@@ -787,10 +785,11 @@ class CodeGen {
   }
 
   reduceStaticPropertyName(node) {
+    var n;
     if (keyword.isIdentifierNameES6(node.value)) {
       return t(node.value);
-    } else if (NUMBER.test(node.value)) {
-      return t("" + parseFloat(node.value));
+    } else if (n = parseFloat(node.value), n === n) {
+      return new NumberCodeRep(n);
     }
     return t(escapeStringLiteral(node.value));
   }

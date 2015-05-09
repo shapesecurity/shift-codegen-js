@@ -144,7 +144,7 @@ describe("Code generator", function () {
       test2("({3:0})", "({0b11:0})");
       test2("({0:0})", "({0.:0})");
       test2("({0:0})", "({.0:0})");
-      test2("({0.1:0})", "({.1:0})");
+      test2("({.1:0})", "({0.1:0})");
       test("({[a]:b})");
       test2("({a:b})", "({\"a\":b})");
       test("({\" \":b})");
@@ -405,23 +405,32 @@ describe("Code generator", function () {
       test2("0", "0b0");
       test("1");
       test("2");
+      test("0x38D7EA4C68001");
+      test2("15e5", "1500000");
+      test2("155e3", "155000");
+      test(".1");
+      test2(".1", "0.1");
       // floats
       test("1.1.valueOf()");
       test("15..valueOf()");
       test("1..valueOf()");
-      test("1e+300.valueOf()");
-      test("8000000000000000..valueOf()");
+      test2("1e300.valueOf()", "1e+300.valueOf()");
+      test2("8e15.valueOf()", "8000000000000000..valueOf()");
+      test2("1e20", "100000000000000000001");
       test2("10..valueOf()", "1e1.valueOf()");
+      test2("100", "1e2");
       test2("1.3754889325393114", "1.3754889325393114");
-      test2("1.3754889325393114e+24", "0x0123456789abcdefABCDEF");
-      test2("4.185580496821357e+298", "4.1855804968213567e298");
+      test2("1.3754889325393114e24", "0x0123456789abcdefABCDEF");
+      test2("4.185580496821357e298", "4.1855804968213567e+298");
       test2("5.562684646268003e-308", "5.5626846462680035e-308");
       test2("5.562684646268003e-309", "5.5626846462680035e-309");
       test2("2147483648", "2147483648.0");
       test("1e-7");
       test("1e-8");
       test("1e-9");
-      test2("1e+308", "1e308");
+      test2("1e308", "1e+308");
+      test("1e308");
+      test("1e-308");
     });
 
     it("LiteralInfinityExpression", function () {
@@ -636,6 +645,7 @@ describe("Code generator", function () {
     });
 
     it("ExportDefault", function () {
+      test("export default function(){}");
       test("export default function f(){}");
       test("export default function*f(){}");
       test("export default class A{}");

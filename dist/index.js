@@ -39,8 +39,6 @@ function codeGen(script) {
   return ts.result;
 }
 
-var NUMBER = /^(?:(?:\.\d+|\d+(?:\.\d*)?)(?:[eE][+-]?\d+)?|0[xX][a-fA-F]+|0[oO][0-7]+|0[bB][01]+)$/;
-
 var Precedence = {
   Sequence: 0,
   Yield: 1,
@@ -1122,10 +1120,11 @@ var CodeGen = (function () {
   }, {
     key: "reduceStaticPropertyName",
     value: function reduceStaticPropertyName(node) {
+      var n;
       if (_esutils.keyword.isIdentifierNameES6(node.value)) {
         return t(node.value);
-      } else if (NUMBER.test(node.value)) {
-        return t("" + parseFloat(node.value));
+      } else if ((n = parseFloat(node.value), n === n)) {
+        return new NumberCodeRep(n);
       }
       return t(escapeStringLiteral(node.value));
     }
