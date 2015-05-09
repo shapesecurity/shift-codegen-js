@@ -398,6 +398,25 @@ describe("Code generator", function () {
       test("(function*f(){})");
     });
 
+    it("ArrowExpression", function () {
+      test("a=>a");
+      test("()=>a");
+      test2("a=>a", "(a)=>a");
+      test("(...a)=>a");
+      test("(a,...b)=>a");
+      test("(a=0)=>a");
+      test("(a,b)=>a");
+      test("({a})=>a");
+      test("({a=0})=>a");
+      test("([a])=>a");
+      test("a=>({})");
+      test("a=>{}");
+      test("a=>{({})}");
+      test("a=>{0;return}");
+      test("()=>function(){}");
+      test("()=>class{}");
+    });
+
     it("LiteralNumericExpression", function () {
       test("0");
       test2("0", "0x0");

@@ -479,6 +479,7 @@ class CodeGen {
   }
 
   reduceBindingPropertyIdentifier(node, {binding, init}) {
+    if (node.init == null) return binding;
     return seq(binding, t("="), init);
   }
 
@@ -620,18 +621,29 @@ class CodeGen {
   }
 
   reduceFunctionDeclaration(node, {name, params, body}) {
-    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, params, brace(body));
+    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, paren(params), brace(body));
   }
 
   reduceFunctionExpression(node, {name, params, body}) {
-    const argBody = seq(params, brace(body));
-    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? seq(name, argBody) : argBody);
+    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? name : empty(), paren(params), brace(body));
     state.startsWithFunctionOrClass = true;
     return state;
   }
 
   reduceFormalParameters(node, {items, rest}) {
-    return paren(commaSep(items.concat(rest == null ? [] : [seq(t("..."), rest)]))) 
+    return commaSep(items.concat(rest == null ? [] : [seq(t("..."), rest)]))
+  }
+
+  reduceArrowExpression(node, {params, body}) {
+    if (node.params.rest != null || node.params.items.length !== 1 || node.params.items[0].type !== "BindingIdentifier") {
+      params = paren(params);
+    }
+    if (node.body.type === "FunctionBody") {
+      body = brace(body);
+    } else if (body.startsWithCurly) {
+      body = paren(body);
+    }
+    return seq(params, t("=>"), body);
   }
 
   reduceGetter(node, {name, body}) {
@@ -732,7 +744,7 @@ class CodeGen {
   }
 
   reduceMethod(node, {name, params, body}) {
-    return seq(node.isGenerator ? t("*") : empty(), name, params, brace(body));
+    return seq(node.isGenerator ? t("*") : empty(), name, paren(params), brace(body));
   }
 
   reduceModule(node, {items}) {
