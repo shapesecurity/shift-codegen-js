@@ -1178,6 +1178,11 @@ var CodeGen = (function () {
       return t(escapeStringLiteral(node.value));
     }
   }, {
+    key: "reduceSuper",
+    value: function reduceSuper() {
+      return t("super");
+    }
+  }, {
     key: "reduceSwitchCase",
     value: function reduceSwitchCase(node, _ref52) {
       var test = _ref52.test;

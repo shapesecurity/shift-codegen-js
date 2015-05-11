@@ -832,6 +832,10 @@ class CodeGen {
     return t(escapeStringLiteral(node.value));
   }
 
+  reduceSuper() {
+    return t("super");
+  }
+
   reduceSwitchCase(node, {test, consequent}) {
     return seq(t("case"), test, t(":"), seq(...consequent));
   }

@@ -448,6 +448,11 @@ describe("Code generator", function () {
       test2("new``(a)", "new ``(a)");
     });
 
+    it("Super", function () {
+      test("class A extends B{constructor(){super()}}");
+      test("({m(){super.m()}})");
+    });
+
     it("YieldExpression", function () {
       test("function*f(){yield}");
       test("function*f(){yield a}");
