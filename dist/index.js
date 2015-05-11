@@ -113,6 +113,8 @@ function getPrecedence(_x4) {
         return Precedence.Primary;
 
       case "AssignmentExpression":
+      case "YieldExpression":
+      case "YieldGeneratorExpression":
         return Precedence.Assignment;
 
       case "ConditionalExpression":
@@ -1260,6 +1262,21 @@ var CodeGen = (function () {
       return seq(t("try"), body, catchClause || empty(), t("finally"), finalizer);
     }
   }, {
+    key: "reduceYieldExpression",
+    value: function reduceYieldExpression(node, _ref59) {
+      var expression = _ref59.expression;
+
+      if (node.expression == null) return t("yield");
+      return seq(t("yield"), p(node.expression, getPrecedence(node), expression));
+    }
+  }, {
+    key: "reduceYieldGeneratorExpression",
+    value: function reduceYieldGeneratorExpression(node, _ref60) {
+      var expression = _ref60.expression;
+
+      return seq(t("yield"), t("*"), p(node.expression, getPrecedence(node), expression));
+    }
+  }, {
     key: "reduceDirective",
     value: function reduceDirective(node) {
       var delim = /^(?:[^"\\]|\\.)*$/.test(node.rawValue) ? "\"" : "'";
@@ -1267,23 +1284,23 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceVariableDeclaration",
-    value: function reduceVariableDeclaration(node, _ref59) {
-      var declarators = _ref59.declarators;
+    value: function reduceVariableDeclaration(node, _ref61) {
+      var declarators = _ref61.declarators;
 
       return seq(t(node.kind), commaSep(declarators));
     }
   }, {
     key: "reduceVariableDeclarationStatement",
-    value: function reduceVariableDeclarationStatement(node, _ref60) {
-      var declaration = _ref60.declaration;
+    value: function reduceVariableDeclarationStatement(node, _ref62) {
+      var declaration = _ref62.declaration;
 
       return seq(declaration, semiOp());
     }
   }, {
     key: "reduceVariableDeclarator",
-    value: function reduceVariableDeclarator(node, _ref61) {
-      var binding = _ref61.binding;
-      var init = _ref61.init;
+    value: function reduceVariableDeclarator(node, _ref63) {
+      var binding = _ref63.binding;
+      var init = _ref63.init;
 
       var containsIn = init && init.containsIn && !init.containsGroup;
       if (init) {
@@ -1297,17 +1314,17 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceWhileStatement",
-    value: function reduceWhileStatement(node, _ref62) {
-      var test = _ref62.test;
-      var body = _ref62.body;
+    value: function reduceWhileStatement(node, _ref64) {
+      var test = _ref64.test;
+      var body = _ref64.body;
 
       return objectAssign(seq(t("while"), paren(test), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
   }, {
     key: "reduceWithStatement",
-    value: function reduceWithStatement(node, _ref63) {
-      var object = _ref63.object;
-      var body = _ref63.body;
+    value: function reduceWithStatement(node, _ref65) {
+      var object = _ref65.object;
+      var body = _ref65.body;
 
       return objectAssign(seq(t("with"), paren(object), body), { endsWithMissingElse: body.endsWithMissingElse });
     }

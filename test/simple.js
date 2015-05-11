@@ -448,6 +448,30 @@ describe("Code generator", function () {
       test2("new``(a)", "new ``(a)");
     });
 
+    it("YieldExpression", function () {
+      test("function*f(){yield}");
+      test("function*f(){yield a}");
+      test("function*f(){yield 0}");
+      test("function*f(){yield{}}");
+      test("function*f(){yield a+b}");
+      test("function*f(){yield a=b}");
+      test("function*f(){yield(a,b)}");
+      test("function*f(){f(yield,yield)}");
+      test("function*f(){f(yield a,yield b)}");
+      test("function*f(){yield yield yield}");
+    });
+
+    it("YieldGeneratorExpression", function () {
+      test("function*f(){yield*a}");
+      test("function*f(){yield*0}");
+      test("function*f(){yield*{}}");
+      test("function*f(){yield*a+b}");
+      test("function*f(){yield*a=b}");
+      test("function*f(){yield*(a,b)}");
+      test("function*f(){f(yield*a,yield*b)}");
+      test("function*f(){yield*yield*(yield)*(yield)}");
+    });
+
     it("LiteralNumericExpression", function () {
       test("0");
       test2("0", "0x0");

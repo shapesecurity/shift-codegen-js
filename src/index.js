@@ -78,6 +78,8 @@ function getPrecedence(node) {
       return Precedence.Primary;
 
     case "AssignmentExpression":
+    case "YieldExpression":
+    case "YieldGeneratorExpression":
       return Precedence.Assignment;
 
     case "ConditionalExpression":
@@ -883,6 +885,15 @@ class CodeGen {
 
   reduceTryFinallyStatement(node, {body, catchClause, finalizer}) {
     return seq(t("try"), body, catchClause || empty(), t("finally"), finalizer);
+  }
+
+  reduceYieldExpression(node, {expression}) {
+    if (node.expression == null) return t("yield");
+    return seq(t("yield"), p(node.expression, getPrecedence(node), expression));
+  }
+
+  reduceYieldGeneratorExpression(node, {expression}) {
+    return seq(t("yield"), t("*"), p(node.expression, getPrecedence(node), expression));
   }
 
   reduceDirective(node) {
