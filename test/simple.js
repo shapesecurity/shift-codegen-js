@@ -422,6 +422,32 @@ describe("Code generator", function () {
       test2("function f(){new.target}", "function f() { new . target }");
     });
 
+    it("TemplateExpression", function () {
+      test("``");
+      test("````");
+      test("a``");
+      test("a.b``");
+      test("a[b]``");
+      test("a()``");
+      test("(a+b)``");
+      test2("(function(){}``)", "(function(){})``");
+      test2("(class{}``)", "(class{})``");
+      test2("({}``)", "({})``");
+      test("`a`");
+      test("a`a`");
+      test("`a${b}c`");
+      test("`${a}`");
+      test("`${a}${b}`");
+      test("` ${a} ${b} `");
+      test2("` ${a} ${b} `", "` ${ a } ${ b } `");
+      test("`a\\${b}c`");
+      test("``.a");
+      test("``()");
+      test("new``");
+      test2("new``", "new ``()");
+      test2("new``(a)", "new ``(a)");
+    });
+
     it("LiteralNumericExpression", function () {
       test("0");
       test2("0", "0x0");

@@ -89,7 +89,20 @@ function getPrecedence(node) {
         case "CallExpression":
         case "ComputedMemberExpression":
         case "StaticMemberExpression":
+        case "TemplateExpression":
           return getPrecedence(node.object);
+        default:
+          return Precedence.Member;
+      }
+
+    case "TemplateExpression":
+      if (node.tag == null) return Precedence.Member;
+      switch (node.tag.type) {
+        case "CallExpression":
+        case "ComputedMemberExpression":
+        case "StaticMemberExpression":
+        case "TemplateExpression":
+          return getPrecedence(node.tag);
         default:
           return Precedence.Member;
       }
@@ -827,6 +840,33 @@ class CodeGen {
       t("switch"),
       paren(discriminant),
       brace(seq(...preDefaultCases, defaultCase, ...postDefaultCases)));
+  }
+
+  reduceTemplateExpression(node, {tag, elements}) {
+    let state = node.tag == null ? empty() : p(node.tag, getPrecedence(node), tag);
+    let templateData = "";
+    state = seq(state, t("`"));
+    for (let i = 0, l = node.elements.length; i < l; ++i) {
+      if (node.elements[i].type === "TemplateElement") {
+        let d = "";
+        if (i > 0) d += "}";
+        d += node.elements[i].rawValue;
+        if (i < l - 1) d += "${"
+        state = seq(state, t(d));
+      } else {
+        state = seq(state, elements[i]);
+      }
+    }
+    state = seq(state, t("`"));
+    if (node.tag != null) {
+      state.startsWithCurly = tag.startsWithCurly;
+      state.startsWithFunctionOrClass = tag.startsWithFunctionOrClass;
+    }
+    return state;
+  }
+
+  reduceTemplateElement(node) {
+    return t(node.rawValue);
   }
 
   reduceThisExpression(node) {

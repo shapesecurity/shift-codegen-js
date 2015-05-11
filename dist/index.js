@@ -124,7 +124,23 @@ function getPrecedence(_x4) {
           case "CallExpression":
           case "ComputedMemberExpression":
           case "StaticMemberExpression":
+          case "TemplateExpression":
             _x4 = node.object;
+            _again2 = true;
+            continue _function2;
+
+          default:
+            return Precedence.Member;
+        }
+
+      case "TemplateExpression":
+        if (node.tag == null) return Precedence.Member;
+        switch (node.tag.type) {
+          case "CallExpression":
+          case "ComputedMemberExpression":
+          case "StaticMemberExpression":
+          case "TemplateExpression":
+            _x4 = node.tag;
             _again2 = true;
             continue _function2;
 
@@ -1183,31 +1199,63 @@ var CodeGen = (function () {
       return seq(t("switch"), paren(discriminant), brace(seq.apply(undefined, _toConsumableArray(preDefaultCases).concat([defaultCase], _toConsumableArray(postDefaultCases)))));
     }
   }, {
+    key: "reduceTemplateExpression",
+    value: function reduceTemplateExpression(node, _ref55) {
+      var tag = _ref55.tag;
+      var elements = _ref55.elements;
+
+      var state = node.tag == null ? empty() : p(node.tag, getPrecedence(node), tag);
+      var templateData = "";
+      state = seq(state, t("`"));
+      for (var i = 0, l = node.elements.length; i < l; ++i) {
+        if (node.elements[i].type === "TemplateElement") {
+          var d = "";
+          if (i > 0) d += "}";
+          d += node.elements[i].rawValue;
+          if (i < l - 1) d += "${";
+          state = seq(state, t(d));
+        } else {
+          state = seq(state, elements[i]);
+        }
+      }
+      state = seq(state, t("`"));
+      if (node.tag != null) {
+        state.startsWithCurly = tag.startsWithCurly;
+        state.startsWithFunctionOrClass = tag.startsWithFunctionOrClass;
+      }
+      return state;
+    }
+  }, {
+    key: "reduceTemplateElement",
+    value: function reduceTemplateElement(node) {
+      return t(node.rawValue);
+    }
+  }, {
     key: "reduceThisExpression",
     value: function reduceThisExpression(node) {
       return t("this");
     }
   }, {
     key: "reduceThrowStatement",
-    value: function reduceThrowStatement(node, _ref55) {
-      var expression = _ref55.expression;
+    value: function reduceThrowStatement(node, _ref56) {
+      var expression = _ref56.expression;
 
       return seq(t("throw"), expression, semiOp());
     }
   }, {
     key: "reduceTryCatchStatement",
-    value: function reduceTryCatchStatement(node, _ref56) {
-      var body = _ref56.body;
-      var catchClause = _ref56.catchClause;
+    value: function reduceTryCatchStatement(node, _ref57) {
+      var body = _ref57.body;
+      var catchClause = _ref57.catchClause;
 
       return seq(t("try"), body, catchClause);
     }
   }, {
     key: "reduceTryFinallyStatement",
-    value: function reduceTryFinallyStatement(node, _ref57) {
-      var body = _ref57.body;
-      var catchClause = _ref57.catchClause;
-      var finalizer = _ref57.finalizer;
+    value: function reduceTryFinallyStatement(node, _ref58) {
+      var body = _ref58.body;
+      var catchClause = _ref58.catchClause;
+      var finalizer = _ref58.finalizer;
 
       return seq(t("try"), body, catchClause || empty(), t("finally"), finalizer);
     }
@@ -1219,23 +1267,23 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceVariableDeclaration",
-    value: function reduceVariableDeclaration(node, _ref58) {
-      var declarators = _ref58.declarators;
+    value: function reduceVariableDeclaration(node, _ref59) {
+      var declarators = _ref59.declarators;
 
       return seq(t(node.kind), commaSep(declarators));
     }
   }, {
     key: "reduceVariableDeclarationStatement",
-    value: function reduceVariableDeclarationStatement(node, _ref59) {
-      var declaration = _ref59.declaration;
+    value: function reduceVariableDeclarationStatement(node, _ref60) {
+      var declaration = _ref60.declaration;
 
       return seq(declaration, semiOp());
     }
   }, {
     key: "reduceVariableDeclarator",
-    value: function reduceVariableDeclarator(node, _ref60) {
-      var binding = _ref60.binding;
-      var init = _ref60.init;
+    value: function reduceVariableDeclarator(node, _ref61) {
+      var binding = _ref61.binding;
+      var init = _ref61.init;
 
       var containsIn = init && init.containsIn && !init.containsGroup;
       if (init) {
@@ -1249,17 +1297,17 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceWhileStatement",
-    value: function reduceWhileStatement(node, _ref61) {
-      var test = _ref61.test;
-      var body = _ref61.body;
+    value: function reduceWhileStatement(node, _ref62) {
+      var test = _ref62.test;
+      var body = _ref62.body;
 
       return objectAssign(seq(t("while"), paren(test), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
   }, {
     key: "reduceWithStatement",
-    value: function reduceWithStatement(node, _ref62) {
-      var object = _ref62.object;
-      var body = _ref62.body;
+    value: function reduceWithStatement(node, _ref63) {
+      var object = _ref63.object;
+      var body = _ref63.body;
 
       return objectAssign(seq(t("with"), paren(object), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
