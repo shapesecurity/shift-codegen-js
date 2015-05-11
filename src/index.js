@@ -757,6 +757,10 @@ class CodeGen {
     return seq(t("new"), calleeRep, args.length === 0 ? empty() : paren(commaSep(args)));
   }
 
+  reduceNewTargetExpression() {
+    return t("new.target");
+  }
+
   reduceObjectExpression(node, {properties}) {
     let state = brace(commaSep(properties));
     state.startsWithCurly = true;

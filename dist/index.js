@@ -1072,6 +1072,11 @@ var CodeGen = (function () {
       return seq(t("new"), calleeRep, args.length === 0 ? empty() : paren(commaSep(args)));
     }
   }, {
+    key: "reduceNewTargetExpression",
+    value: function reduceNewTargetExpression() {
+      return t("new.target");
+    }
+  }, {
     key: "reduceObjectExpression",
     value: function reduceObjectExpression(node, _ref44) {
       var properties = _ref44.properties;

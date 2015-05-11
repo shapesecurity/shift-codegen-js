@@ -417,6 +417,11 @@ describe("Code generator", function () {
       test("()=>class{}");
     });
 
+    it("NewTargetExpression", function () {
+      test("function f(){new.target}");
+      test2("function f(){new.target}", "function f() { new . target }");
+    });
+
     it("LiteralNumericExpression", function () {
       test("0");
       test2("0", "0x0");
