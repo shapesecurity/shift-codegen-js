@@ -694,9 +694,9 @@ class CodeGen {
       bindings.push(brace(commaSep(namedImports)));
     }
     if (bindings.length === 0) {
-      return seq(t("import"), t(escapeStringLiteral(node.moduleSpecifier)));
+      return seq(t("import"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
     }
-    return seq(t("import"), commaSep(bindings), t("from"), t(escapeStringLiteral(node.moduleSpecifier)));
+    return seq(t("import"), commaSep(bindings), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
   }
 
   reduceImportNamespace(node, {defaultBinding, namespaceBinding}) {
@@ -707,7 +707,8 @@ class CodeGen {
       t("as"),
       namespaceBinding,
       t("from"),
-      t(escapeStringLiteral(node.moduleSpecifier))
+      t(escapeStringLiteral(node.moduleSpecifier)),
+      semiOp()
     );
   }
 
@@ -717,19 +718,34 @@ class CodeGen {
   }
 
   reduceExportAllFrom(node) {
-    return seq(t("export"), t("*"), t("from"), t(escapeStringLiteral(node.moduleSpecifier)));
+    return seq(t("export"), t("*"), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier))));
+    return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp()));
   }
 
   reduceExport(node, {declaration}) {
+    switch (node.declaration.type) {
+      case "FunctionDeclaration":
+      case "ClassDeclaration":
+        break;
+      default:
+        declaration = seq(declaration, semiOp());
+    }
     return seq(t("export"), declaration);
   }
 
   reduceExportDefault(node, {body}) {
-    return seq(t("export default"), body.startsWithFunctionOrClass ? paren(body) : body);
+    body = body.startsWithFunctionOrClass ? paren(body) : body;
+    switch (node.body.type) {
+      case "FunctionDeclaration":
+      case "ClassDeclaration":
+        break;
+      default:
+        body = seq(body, semiOp());
+    }
+    return seq(t("export default"), body);
   }
 
   reduceExportSpecifier(node) {

@@ -984,9 +984,9 @@ var CodeGen = (function () {
         bindings.push(brace(commaSep(namedImports)));
       }
       if (bindings.length === 0) {
-        return seq(t("import"), t(escapeStringLiteral(node.moduleSpecifier)));
+        return seq(t("import"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
       }
-      return seq(t("import"), commaSep(bindings), t("from"), t(escapeStringLiteral(node.moduleSpecifier)));
+      return seq(t("import"), commaSep(bindings), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
     }
   }, {
     key: "reduceImportNamespace",
@@ -994,7 +994,7 @@ var CodeGen = (function () {
       var defaultBinding = _ref36.defaultBinding;
       var namespaceBinding = _ref36.namespaceBinding;
 
-      return seq(t("import"), defaultBinding == null ? empty() : seq(defaultBinding, t(",")), t("*"), t("as"), namespaceBinding, t("from"), t(escapeStringLiteral(node.moduleSpecifier)));
+      return seq(t("import"), defaultBinding == null ? empty() : seq(defaultBinding, t(",")), t("*"), t("as"), namespaceBinding, t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
     }
   }, {
     key: "reduceImportSpecifier",
@@ -1007,20 +1007,27 @@ var CodeGen = (function () {
   }, {
     key: "reduceExportAllFrom",
     value: function reduceExportAllFrom(node) {
-      return seq(t("export"), t("*"), t("from"), t(escapeStringLiteral(node.moduleSpecifier)));
+      return seq(t("export"), t("*"), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
     }
   }, {
     key: "reduceExportFrom",
     value: function reduceExportFrom(node, _ref38) {
       var namedExports = _ref38.namedExports;
 
-      return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier))));
+      return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp()));
     }
   }, {
     key: "reduceExport",
     value: function reduceExport(node, _ref39) {
       var declaration = _ref39.declaration;
 
+      switch (node.declaration.type) {
+        case "FunctionDeclaration":
+        case "ClassDeclaration":
+          break;
+        default:
+          declaration = seq(declaration, semiOp());
+      }
       return seq(t("export"), declaration);
     }
   }, {
@@ -1028,7 +1035,15 @@ var CodeGen = (function () {
     value: function reduceExportDefault(node, _ref40) {
       var body = _ref40.body;
 
-      return seq(t("export default"), body.startsWithFunctionOrClass ? paren(body) : body);
+      body = body.startsWithFunctionOrClass ? paren(body) : body;
+      switch (node.body.type) {
+        case "FunctionDeclaration":
+        case "ClassDeclaration":
+          break;
+        default:
+          body = seq(body, semiOp());
+      }
+      return seq(t("export default"), body);
     }
   }, {
     key: "reduceExportSpecifier",
