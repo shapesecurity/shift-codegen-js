@@ -27,6 +27,7 @@
   "devDependencies": {
     "babel": "5.2.17",
     "commonjs-everywhere": "0.9.7",
+    "everything.js": "^1.0.3",
     "expect.js": "0.3.1",
     "istanbul": "0.3.13",
     "mocha": "2.2.4",

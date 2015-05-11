@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+var fs = require("fs");
 var expect = require("expect.js");
 var codeGen = require("../")["default"];
 var parse = require("shift-parser").parseModule;
@@ -22,6 +23,18 @@ var parseScript = require("shift-parser").parseScript;
 describe("API", function () {
   it("should exist", function () {
     expect(typeof codeGen).be("function");
+  });
+});
+
+describe("everything.js", function () {
+  it("should round trip", function () {
+    var source;
+
+    source = "" + fs.readFileSync(require.resolve("everything.js/es2015-module"));
+    expect(parse(codeGen(parse(source)))).eql(parse(source));
+
+    source = "" + fs.readFileSync(require.resolve("everything.js/es2015-script"));
+    expect(parseScript(codeGen(parseScript(source)))).eql(parseScript(source));
   });
 });
 
@@ -684,22 +697,26 @@ describe("Code generator", function () {
 
     it("Import", function () {
       test("import\"m\"");
+      test("import\"m\";0");
       test("import a from\"m\"");
       test("import{a}from\"m\"");
       test("import{a,b}from\"m\"");
       test("import a,{b}from\"m\"");
       test("import a,{b,c}from\"m\"");
+      test("import a,{b,c}from\"m\";0");
       test2("import\"m\"", "import {} from \"m\"");
       test2("import a from\"m\"", "import a,{}from \"m\"");
     });
 
     it("ImportNamespace", function () {
       test("import*as a from\"m\"");
+      test("import*as a from\"m\";0");
       test("import a,*as b from\"m\"");
     });
 
     it("ImportSpecifier", function () {
       test("import{a}from\"m\"");
+      test("import{a}from\"m\";0");
       test("import{a as b}from\"m\"");
       test("import{a,b}from\"m\"");
       test("import{a,b as c}from\"m\"");
@@ -709,10 +726,12 @@ describe("Code generator", function () {
 
     it("ExportAllFrom", function () {
       test("export*from\"m\"");
+      test("export*from\"m\";0");
     });
 
     it("ExportFrom", function () {
       test("export{}from\"m\"");
+      test("export{}from\"m\";0");
       test("let a;export{a}from\"m\"");
       test("let a,b;export{a,b}from\"m\"");
       test("export{}");
@@ -722,19 +741,27 @@ describe("Code generator", function () {
 
     it("Export", function () {
       test("export var a");
+      test("export var a;0");
       test("export var a=0");
       test("export var a,b");
       test("export var a=0,b=0");
       test("export const a=0");
       test("export let a");
+      test("export function f(){}");
+      test("export function f(){}0");
+      test("export class A{}");
+      test("export class A{}0");
     });
 
     it("ExportDefault", function () {
       test("export default function(){}");
+      test("export default function(){}0");
+      test("export default 0");
+      test("export default 0;0");
       test("export default function f(){}");
       test("export default function*f(){}");
       test("export default class A{}");
-      test("export default 0");
+      test("export default(class{})");
       test("export default(function(){})");
       test("export default{}");
     });
@@ -750,6 +777,7 @@ describe("Code generator", function () {
 
     it("Module", function () {
       test("");
+      test("a;a");
     });
 
   });
