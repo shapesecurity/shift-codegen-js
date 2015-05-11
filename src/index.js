@@ -617,6 +617,13 @@ class CodeGen {
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
+  reduceForOfStatement(node, {left, right, body}) {
+    left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
+    return objectAssign(
+      seq(t("for"), paren(seq(left, t("of"), right)), body),
+      {endsWithMissingElse: body.endsWithMissingElse});
+  }
+
   reduceForStatement(node, {init, test, update, body}) {
     return objectAssign(
       seq(

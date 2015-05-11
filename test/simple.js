@@ -472,6 +472,12 @@ describe("Code generator", function () {
       test("function*f(){yield*yield*(yield)*(yield)}");
     });
 
+    it("ForOfStatement", function () {
+      test("for(a of b);");
+      test("for([a]of[b]);");
+      test("for(let[a]of[b]);");
+    });
+
     it("LiteralNumericExpression", function () {
       test("0");
       test2("0", "0x0");
