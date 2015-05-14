@@ -13,9 +13,9 @@
     "dist"
   ],
   "scripts": {
-    "test": "mocha --inline-diffs --check-leaks --ui tdd --reporter dot --recursive test",
+    "test": "mocha --inline-diffs --check-leaks --ui tdd --reporter dot --timeout 5000 --recursive test",
     "build": "babel --auxiliary-comment 'istanbul ignore next' --modules commonStrict --source-maps-inline --out-dir dist src",
-    "generate-coverage": "istanbul cover _mocha -- --inline-diffs --check-leaks --ui tdd --reporter dot --recursive test",
+    "generate-coverage": "istanbul cover _mocha -- --inline-diffs --check-leaks --ui tdd --reporter dot --timeout 5000 --recursive test",
     "check-coverage": "istanbul check-coverage --statements 100 --functions 100 --branches 100 --lines 100",
     "cjsify": "cjsify --export ShiftCodegen lib/index.js > shift-codegen.js"
   },
