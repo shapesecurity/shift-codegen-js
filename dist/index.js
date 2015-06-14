@@ -112,6 +112,7 @@ function getPrecedence(_x4) {
         return Precedence.Primary;
 
       case "AssignmentExpression":
+      case "CompoundAssignmentExpression":
       case "YieldExpression":
       case "YieldGeneratorExpression":
         return Precedence.Assignment;
@@ -156,9 +157,9 @@ function getPrecedence(_x4) {
         return Precedence.Call;
       case "NewExpression":
         return node.arguments.length === 0 ? Precedence.New : Precedence.Member;
-      case "PostfixExpression":
-        return Precedence.Postfix;
-      case "PrefixExpression":
+      case "UpdateExpression":
+        return node.isPrefix ? Precedence.Prefix : Precedence.Postfix;
+      case "UnaryExpression":
         return Precedence.Prefix;
     }
   }
@@ -611,13 +612,30 @@ var CodeGen = (function () {
         rightCode = paren(rightCode);
         containsIn = false;
       }
+      return objectAssign(seq(leftCode, t("="), rightCode), { containsIn: containsIn, startsWithCurly: startsWithCurly, startsWithFunctionOrClass: startsWithFunctionOrClass });
+    }
+  }, {
+    key: "reduceCompoundAssignmentExpression",
+    value: function reduceCompoundAssignmentExpression(node, _ref4) {
+      var binding = _ref4.binding;
+      var expression = _ref4.expression;
+
+      var leftCode = binding;
+      var rightCode = expression;
+      var containsIn = expression.containsIn;
+      var startsWithCurly = binding.startsWithCurly;
+      var startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
+      if (getPrecedence(node.expression) < getPrecedence(node)) {
+        rightCode = paren(rightCode);
+        containsIn = false;
+      }
       return objectAssign(seq(leftCode, t(node.operator), rightCode), { containsIn: containsIn, startsWithCurly: startsWithCurly, startsWithFunctionOrClass: startsWithFunctionOrClass });
     }
   }, {
     key: "reduceBinaryExpression",
-    value: function reduceBinaryExpression(node, _ref4) {
-      var left = _ref4.left;
-      var right = _ref4.right;
+    value: function reduceBinaryExpression(node, _ref5) {
+      var left = _ref5.left;
+      var right = _ref5.right;
 
       var leftCode = left;
       var startsWithCurly = left.startsWithCurly;
@@ -644,9 +662,9 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceBindingWithDefault",
-    value: function reduceBindingWithDefault(node, _ref5) {
-      var binding = _ref5.binding;
-      var init = _ref5.init;
+    value: function reduceBindingWithDefault(node, _ref6) {
+      var binding = _ref6.binding;
+      var init = _ref6.init;
 
       return seq(binding, t("="), init);
     }
@@ -657,9 +675,9 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceArrayBinding",
-    value: function reduceArrayBinding(node, _ref6) {
-      var elements = _ref6.elements;
-      var restElement = _ref6.restElement;
+    value: function reduceArrayBinding(node, _ref7) {
+      var elements = _ref7.elements;
+      var restElement = _ref7.restElement;
 
       var content = undefined;
       if (elements.length === 0) {
@@ -675,8 +693,8 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceObjectBinding",
-    value: function reduceObjectBinding(node, _ref7) {
-      var properties = _ref7.properties;
+    value: function reduceObjectBinding(node, _ref8) {
+      var properties = _ref8.properties;
 
       var state = brace(commaSep(properties));
       state.startsWithCurly = true;
@@ -684,64 +702,64 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceBindingPropertyIdentifier",
-    value: function reduceBindingPropertyIdentifier(node, _ref8) {
-      var binding = _ref8.binding;
-      var init = _ref8.init;
+    value: function reduceBindingPropertyIdentifier(node, _ref9) {
+      var binding = _ref9.binding;
+      var init = _ref9.init;
 
       if (node.init == null) return binding;
       return seq(binding, t("="), init);
     }
   }, {
     key: "reduceBindingPropertyProperty",
-    value: function reduceBindingPropertyProperty(node, _ref9) {
-      var name = _ref9.name;
-      var binding = _ref9.binding;
+    value: function reduceBindingPropertyProperty(node, _ref10) {
+      var name = _ref10.name;
+      var binding = _ref10.binding;
 
       return seq(name, t(":"), binding);
     }
   }, {
     key: "reduceBlock",
-    value: function reduceBlock(node, _ref10) {
-      var statements = _ref10.statements;
+    value: function reduceBlock(node, _ref11) {
+      var statements = _ref11.statements;
 
       return brace(seq.apply(undefined, _toConsumableArray(statements)));
     }
   }, {
     key: "reduceBlockStatement",
-    value: function reduceBlockStatement(node, _ref11) {
-      var block = _ref11.block;
+    value: function reduceBlockStatement(node, _ref12) {
+      var block = _ref12.block;
 
       return block;
     }
   }, {
     key: "reduceBreakStatement",
-    value: function reduceBreakStatement(node, _ref12) {
-      var label = _ref12.label;
+    value: function reduceBreakStatement(node, _ref13) {
+      var label = _ref13.label;
 
       return seq(t("break"), label ? t(label) : empty(), semiOp());
     }
   }, {
     key: "reduceCallExpression",
-    value: function reduceCallExpression(node, _ref13) {
-      var callee = _ref13.callee;
-      var args = _ref13.arguments;
+    value: function reduceCallExpression(node, _ref14) {
+      var callee = _ref14.callee;
+      var args = _ref14.arguments;
 
       return objectAssign(seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(args))), { startsWithCurly: callee.startsWithCurly, startsWithFunctionOrClass: callee.startsWithFunctionOrClass });
     }
   }, {
     key: "reduceCatchClause",
-    value: function reduceCatchClause(node, _ref14) {
-      var binding = _ref14.binding;
-      var body = _ref14.body;
+    value: function reduceCatchClause(node, _ref15) {
+      var binding = _ref15.binding;
+      var body = _ref15.body;
 
       return seq(t("catch"), paren(binding), body);
     }
   }, {
     key: "reduceClassDeclaration",
-    value: function reduceClassDeclaration(node, _ref15) {
-      var name = _ref15.name;
-      var _super = _ref15["super"];
-      var elements = _ref15.elements;
+    value: function reduceClassDeclaration(node, _ref16) {
+      var name = _ref16.name;
+      var _super = _ref16["super"];
+      var elements = _ref16.elements;
 
       var state = seq(t("class"), name);
       if (_super != null) {
@@ -752,10 +770,10 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceClassExpression",
-    value: function reduceClassExpression(node, _ref16) {
-      var name = _ref16.name;
-      var _super = _ref16["super"];
-      var elements = _ref16.elements;
+    value: function reduceClassExpression(node, _ref17) {
+      var name = _ref17.name;
+      var _super = _ref17["super"];
+      var elements = _ref17.elements;
 
       var state = t("class");
       if (name != null) {
@@ -770,33 +788,33 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceClassElement",
-    value: function reduceClassElement(node, _ref17) {
-      var method = _ref17.method;
+    value: function reduceClassElement(node, _ref18) {
+      var method = _ref18.method;
 
       if (!node.isStatic) return method;
       return seq(t("static"), method);
     }
   }, {
     key: "reduceComputedMemberExpression",
-    value: function reduceComputedMemberExpression(node, _ref18) {
-      var object = _ref18.object;
-      var expression = _ref18.expression;
+    value: function reduceComputedMemberExpression(node, _ref19) {
+      var object = _ref19.object;
+      var expression = _ref19.expression;
 
       return objectAssign(seq(p(node.object, getPrecedence(node), object), bracket(expression)), { startsWithCurly: object.startsWithCurly, startsWithFunctionOrClass: object.startsWithFunctionOrClass });
     }
   }, {
     key: "reduceComputedPropertyName",
-    value: function reduceComputedPropertyName(node, _ref19) {
-      var expression = _ref19.expression;
+    value: function reduceComputedPropertyName(node, _ref20) {
+      var expression = _ref20.expression;
 
       return bracket(expression);
     }
   }, {
     key: "reduceConditionalExpression",
-    value: function reduceConditionalExpression(node, _ref20) {
-      var test = _ref20.test;
-      var consequent = _ref20.consequent;
-      var alternate = _ref20.alternate;
+    value: function reduceConditionalExpression(node, _ref21) {
+      var test = _ref21.test;
+      var consequent = _ref21.consequent;
+      var alternate = _ref21.alternate;
 
       var containsIn = test.containsIn || alternate.containsIn;
       var startsWithCurly = test.startsWithCurly;
@@ -809,16 +827,16 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceContinueStatement",
-    value: function reduceContinueStatement(node, _ref21) {
-      var label = _ref21.label;
+    value: function reduceContinueStatement(node, _ref22) {
+      var label = _ref22.label;
 
       return seq(t("continue"), label ? t(label) : empty(), semiOp());
     }
   }, {
     key: "reduceDataProperty",
-    value: function reduceDataProperty(node, _ref22) {
-      var name = _ref22.name;
-      var expression = _ref22.expression;
+    value: function reduceDataProperty(node, _ref23) {
+      var name = _ref23.name;
+      var expression = _ref23.expression;
 
       return seq(name, t(":"), getAssignmentExpr(expression));
     }
@@ -829,9 +847,9 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceDoWhileStatement",
-    value: function reduceDoWhileStatement(node, _ref23) {
-      var body = _ref23.body;
-      var test = _ref23.test;
+    value: function reduceDoWhileStatement(node, _ref24) {
+      var body = _ref24.body;
+      var test = _ref24.test;
 
       return seq(t("do"), body, t("while"), paren(test), semiOp());
     }
@@ -842,17 +860,17 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceExpressionStatement",
-    value: function reduceExpressionStatement(node, _ref24) {
-      var expression = _ref24.expression;
+    value: function reduceExpressionStatement(node, _ref25) {
+      var expression = _ref25.expression;
 
       return seq(expression.startsWithCurly || expression.startsWithFunctionOrClass ? paren(expression) : expression, semiOp());
     }
   }, {
     key: "reduceForInStatement",
-    value: function reduceForInStatement(node, _ref25) {
-      var left = _ref25.left;
-      var right = _ref25.right;
-      var body = _ref25.body;
+    value: function reduceForInStatement(node, _ref26) {
+      var left = _ref26.left;
+      var right = _ref26.right;
+      var body = _ref26.body;
 
       var leftP = left;
       switch (node.left.type) {
@@ -869,21 +887,21 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceForOfStatement",
-    value: function reduceForOfStatement(node, _ref26) {
-      var left = _ref26.left;
-      var right = _ref26.right;
-      var body = _ref26.body;
+    value: function reduceForOfStatement(node, _ref27) {
+      var left = _ref27.left;
+      var right = _ref27.right;
+      var body = _ref27.body;
 
       left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
       return objectAssign(seq(t("for"), paren(seq(left, t("of"), right)), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
   }, {
     key: "reduceForStatement",
-    value: function reduceForStatement(node, _ref27) {
-      var init = _ref27.init;
-      var test = _ref27.test;
-      var update = _ref27.update;
-      var body = _ref27.body;
+    value: function reduceForStatement(node, _ref28) {
+      var init = _ref28.init;
+      var test = _ref28.test;
+      var update = _ref28.update;
+      var body = _ref28.body;
 
       return objectAssign(seq(t("for"), paren(seq(init ? noIn(markContainsIn(init)) : empty(), semi(), test || empty(), semi(), update || empty())), body), {
         endsWithMissingElse: body.endsWithMissingElse
@@ -891,9 +909,9 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceFunctionBody",
-    value: function reduceFunctionBody(node, _ref28) {
-      var directives = _ref28.directives;
-      var statements = _ref28.statements;
+    value: function reduceFunctionBody(node, _ref29) {
+      var directives = _ref29.directives;
+      var statements = _ref29.statements;
 
       if (statements.length) {
         statements[0] = parenToAvoidBeingDirective(node.statements[0], statements[0]);
@@ -902,19 +920,19 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceFunctionDeclaration",
-    value: function reduceFunctionDeclaration(node, _ref29) {
-      var name = _ref29.name;
-      var params = _ref29.params;
-      var body = _ref29.body;
+    value: function reduceFunctionDeclaration(node, _ref30) {
+      var name = _ref30.name;
+      var params = _ref30.params;
+      var body = _ref30.body;
 
       return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, paren(params), brace(body));
     }
   }, {
     key: "reduceFunctionExpression",
-    value: function reduceFunctionExpression(node, _ref30) {
-      var name = _ref30.name;
-      var params = _ref30.params;
-      var body = _ref30.body;
+    value: function reduceFunctionExpression(node, _ref31) {
+      var name = _ref31.name;
+      var params = _ref31.params;
+      var body = _ref31.body;
 
       var state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? name : empty(), paren(params), brace(body));
       state.startsWithFunctionOrClass = true;
@@ -922,17 +940,17 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceFormalParameters",
-    value: function reduceFormalParameters(node, _ref31) {
-      var items = _ref31.items;
-      var rest = _ref31.rest;
+    value: function reduceFormalParameters(node, _ref32) {
+      var items = _ref32.items;
+      var rest = _ref32.rest;
 
       return commaSep(items.concat(rest == null ? [] : [seq(t("..."), rest)]));
     }
   }, {
     key: "reduceArrowExpression",
-    value: function reduceArrowExpression(node, _ref32) {
-      var params = _ref32.params;
-      var body = _ref32.body;
+    value: function reduceArrowExpression(node, _ref33) {
+      var params = _ref33.params;
+      var body = _ref33.body;
 
       if (node.params.rest != null || node.params.items.length !== 1 || node.params.items[0].type !== "BindingIdentifier") {
         params = paren(params);
@@ -946,9 +964,9 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceGetter",
-    value: function reduceGetter(node, _ref33) {
-      var name = _ref33.name;
-      var body = _ref33.body;
+    value: function reduceGetter(node, _ref34) {
+      var name = _ref34.name;
+      var body = _ref34.body;
 
       return seq(t("get"), name, paren(empty()), brace(body));
     }
@@ -959,10 +977,10 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceIfStatement",
-    value: function reduceIfStatement(node, _ref34) {
-      var test = _ref34.test;
-      var consequent = _ref34.consequent;
-      var alternate = _ref34.alternate;
+    value: function reduceIfStatement(node, _ref35) {
+      var test = _ref35.test;
+      var consequent = _ref35.consequent;
+      var alternate = _ref35.alternate;
 
       if (alternate && consequent.endsWithMissingElse) {
         consequent = brace(consequent);
@@ -971,9 +989,9 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceImport",
-    value: function reduceImport(node, _ref35) {
-      var defaultBinding = _ref35.defaultBinding;
-      var namedImports = _ref35.namedImports;
+    value: function reduceImport(node, _ref36) {
+      var defaultBinding = _ref36.defaultBinding;
+      var namedImports = _ref36.namedImports;
 
       var bindings = [];
       if (defaultBinding != null) {
@@ -989,16 +1007,16 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceImportNamespace",
-    value: function reduceImportNamespace(node, _ref36) {
-      var defaultBinding = _ref36.defaultBinding;
-      var namespaceBinding = _ref36.namespaceBinding;
+    value: function reduceImportNamespace(node, _ref37) {
+      var defaultBinding = _ref37.defaultBinding;
+      var namespaceBinding = _ref37.namespaceBinding;
 
       return seq(t("import"), defaultBinding == null ? empty() : seq(defaultBinding, t(",")), t("*"), t("as"), namespaceBinding, t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
     }
   }, {
     key: "reduceImportSpecifier",
-    value: function reduceImportSpecifier(node, _ref37) {
-      var binding = _ref37.binding;
+    value: function reduceImportSpecifier(node, _ref38) {
+      var binding = _ref38.binding;
 
       if (node.name == null) return binding;
       return seq(t(node.name), t("as"), binding);
@@ -1010,15 +1028,15 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceExportFrom",
-    value: function reduceExportFrom(node, _ref38) {
-      var namedExports = _ref38.namedExports;
+    value: function reduceExportFrom(node, _ref39) {
+      var namedExports = _ref39.namedExports;
 
       return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp()));
     }
   }, {
     key: "reduceExport",
-    value: function reduceExport(node, _ref39) {
-      var declaration = _ref39.declaration;
+    value: function reduceExport(node, _ref40) {
+      var declaration = _ref40.declaration;
 
       switch (node.declaration.type) {
         case "FunctionDeclaration":
@@ -1031,8 +1049,8 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceExportDefault",
-    value: function reduceExportDefault(node, _ref40) {
-      var body = _ref40.body;
+    value: function reduceExportDefault(node, _ref41) {
+      var body = _ref41.body;
 
       body = body.startsWithFunctionOrClass ? paren(body) : body;
       switch (node.body.type) {
@@ -1052,9 +1070,9 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceLabeledStatement",
-    value: function reduceLabeledStatement(node, _ref41) {
-      var label = _ref41.label;
-      var body = _ref41.body;
+    value: function reduceLabeledStatement(node, _ref42) {
+      var label = _ref42.label;
+      var body = _ref42.body;
 
       return objectAssign(seq(t(label + ":"), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
@@ -1090,25 +1108,29 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceMethod",
-    value: function reduceMethod(node, _ref42) {
-      var name = _ref42.name;
-      var params = _ref42.params;
-      var body = _ref42.body;
+    value: function reduceMethod(node, _ref43) {
+      var name = _ref43.name;
+      var params = _ref43.params;
+      var body = _ref43.body;
 
       return seq(node.isGenerator ? t("*") : empty(), name, paren(params), brace(body));
     }
   }, {
     key: "reduceModule",
-    value: function reduceModule(node, _ref43) {
-      var items = _ref43.items;
+    value: function reduceModule(node, _ref44) {
+      var directives = _ref44.directives;
+      var items = _ref44.items;
 
-      return seq.apply(undefined, _toConsumableArray(items));
+      if (items.length) {
+        items[0] = parenToAvoidBeingDirective(node.items[0], items[0]);
+      }
+      return seq.apply(undefined, _toConsumableArray(directives).concat(_toConsumableArray(items)));
     }
   }, {
     key: "reduceNewExpression",
-    value: function reduceNewExpression(node, _ref44) {
-      var callee = _ref44.callee;
-      var args = _ref44.arguments;
+    value: function reduceNewExpression(node, _ref45) {
+      var callee = _ref45.callee;
+      var args = _ref45.arguments;
 
       var calleeRep = getPrecedence(node.callee) == Precedence.Call ? paren(callee) : p(node.callee, getPrecedence(node), callee);
       return seq(t("new"), calleeRep, args.length === 0 ? empty() : paren(commaSep(args)));
@@ -1120,47 +1142,55 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceObjectExpression",
-    value: function reduceObjectExpression(node, _ref45) {
-      var properties = _ref45.properties;
+    value: function reduceObjectExpression(node, _ref46) {
+      var properties = _ref46.properties;
 
       var state = brace(commaSep(properties));
       state.startsWithCurly = true;
       return state;
     }
   }, {
-    key: "reducePostfixExpression",
-    value: function reducePostfixExpression(node, _ref46) {
-      var operand = _ref46.operand;
+    key: "reduceUpdateExpression",
+    value: function reduceUpdateExpression(node, _ref47) {
+      var operand = _ref47.operand;
 
-      return objectAssign(seq(p(node.operand, Precedence.New, operand), t(node.operator)), { startsWithCurly: operand.startsWithCurly, startsWithFunctionOrClass: operand.startsWithFunctionOrClass });
+      if (node.isPrefix) {
+        return this.reduceUnaryExpression.apply(this, arguments);
+      } else {
+        return objectAssign(seq(p(node.operand, Precedence.New, operand), t(node.operator)), { startsWithCurly: operand.startsWithCurly, startsWithFunctionOrClass: operand.startsWithFunctionOrClass });
+      }
     }
   }, {
-    key: "reducePrefixExpression",
-    value: function reducePrefixExpression(node, _ref47) {
-      var operand = _ref47.operand;
+    key: "reduceUnaryExpression",
+    value: function reduceUnaryExpression(node, _ref48) {
+      var operand = _ref48.operand;
 
       return seq(t(node.operator), p(node.operand, getPrecedence(node), operand));
     }
   }, {
     key: "reduceReturnStatement",
-    value: function reduceReturnStatement(node, _ref48) {
-      var expression = _ref48.expression;
+    value: function reduceReturnStatement(node, _ref49) {
+      var expression = _ref49.expression;
 
       return seq(t("return"), expression || empty(), semiOp());
     }
   }, {
     key: "reduceScript",
-    value: function reduceScript(node, _ref49) {
-      var body = _ref49.body;
+    value: function reduceScript(node, _ref50) {
+      var directives = _ref50.directives;
+      var statements = _ref50.statements;
 
-      return body;
+      if (statements.length) {
+        statements[0] = parenToAvoidBeingDirective(node.statements[0], statements[0]);
+      }
+      return seq.apply(undefined, _toConsumableArray(directives).concat(_toConsumableArray(statements)));
     }
   }, {
     key: "reduceSetter",
-    value: function reduceSetter(node, _ref50) {
-      var name = _ref50.name;
-      var param = _ref50.param;
-      var body = _ref50.body;
+    value: function reduceSetter(node, _ref51) {
+      var name = _ref51.name;
+      var param = _ref51.param;
+      var body = _ref51.body;
 
       return seq(t("set"), name, paren(param), brace(body));
     }
@@ -1171,9 +1201,9 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceStaticMemberExpression",
-    value: function reduceStaticMemberExpression(node, _ref51) {
-      var object = _ref51.object;
-      var property = _ref51.property;
+    value: function reduceStaticMemberExpression(node, _ref52) {
+      var object = _ref52.object;
+      var property = _ref52.property;
 
       var state = seq(p(node.object, getPrecedence(node), object), t("."), t(property));
       state.startsWithCurly = object.startsWithCurly;
@@ -1198,42 +1228,42 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceSwitchCase",
-    value: function reduceSwitchCase(node, _ref52) {
-      var test = _ref52.test;
-      var consequent = _ref52.consequent;
+    value: function reduceSwitchCase(node, _ref53) {
+      var test = _ref53.test;
+      var consequent = _ref53.consequent;
 
       return seq(t("case"), test, t(":"), seq.apply(undefined, _toConsumableArray(consequent)));
     }
   }, {
     key: "reduceSwitchDefault",
-    value: function reduceSwitchDefault(node, _ref53) {
-      var consequent = _ref53.consequent;
+    value: function reduceSwitchDefault(node, _ref54) {
+      var consequent = _ref54.consequent;
 
       return seq(t("default:"), seq.apply(undefined, _toConsumableArray(consequent)));
     }
   }, {
     key: "reduceSwitchStatement",
-    value: function reduceSwitchStatement(node, _ref54) {
-      var discriminant = _ref54.discriminant;
-      var cases = _ref54.cases;
+    value: function reduceSwitchStatement(node, _ref55) {
+      var discriminant = _ref55.discriminant;
+      var cases = _ref55.cases;
 
       return seq(t("switch"), paren(discriminant), brace(seq.apply(undefined, _toConsumableArray(cases))));
     }
   }, {
     key: "reduceSwitchStatementWithDefault",
-    value: function reduceSwitchStatementWithDefault(node, _ref55) {
-      var discriminant = _ref55.discriminant;
-      var preDefaultCases = _ref55.preDefaultCases;
-      var defaultCase = _ref55.defaultCase;
-      var postDefaultCases = _ref55.postDefaultCases;
+    value: function reduceSwitchStatementWithDefault(node, _ref56) {
+      var discriminant = _ref56.discriminant;
+      var preDefaultCases = _ref56.preDefaultCases;
+      var defaultCase = _ref56.defaultCase;
+      var postDefaultCases = _ref56.postDefaultCases;
 
       return seq(t("switch"), paren(discriminant), brace(seq.apply(undefined, _toConsumableArray(preDefaultCases).concat([defaultCase], _toConsumableArray(postDefaultCases)))));
     }
   }, {
     key: "reduceTemplateExpression",
-    value: function reduceTemplateExpression(node, _ref56) {
-      var tag = _ref56.tag;
-      var elements = _ref56.elements;
+    value: function reduceTemplateExpression(node, _ref57) {
+      var tag = _ref57.tag;
+      var elements = _ref57.elements;
 
       var state = node.tag == null ? empty() : p(node.tag, getPrecedence(node), tag);
       var templateData = "";
@@ -1268,40 +1298,40 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceThrowStatement",
-    value: function reduceThrowStatement(node, _ref57) {
-      var expression = _ref57.expression;
+    value: function reduceThrowStatement(node, _ref58) {
+      var expression = _ref58.expression;
 
       return seq(t("throw"), expression, semiOp());
     }
   }, {
     key: "reduceTryCatchStatement",
-    value: function reduceTryCatchStatement(node, _ref58) {
-      var body = _ref58.body;
-      var catchClause = _ref58.catchClause;
+    value: function reduceTryCatchStatement(node, _ref59) {
+      var body = _ref59.body;
+      var catchClause = _ref59.catchClause;
 
       return seq(t("try"), body, catchClause);
     }
   }, {
     key: "reduceTryFinallyStatement",
-    value: function reduceTryFinallyStatement(node, _ref59) {
-      var body = _ref59.body;
-      var catchClause = _ref59.catchClause;
-      var finalizer = _ref59.finalizer;
+    value: function reduceTryFinallyStatement(node, _ref60) {
+      var body = _ref60.body;
+      var catchClause = _ref60.catchClause;
+      var finalizer = _ref60.finalizer;
 
       return seq(t("try"), body, catchClause || empty(), t("finally"), finalizer);
     }
   }, {
     key: "reduceYieldExpression",
-    value: function reduceYieldExpression(node, _ref60) {
-      var expression = _ref60.expression;
+    value: function reduceYieldExpression(node, _ref61) {
+      var expression = _ref61.expression;
 
       if (node.expression == null) return t("yield");
       return seq(t("yield"), p(node.expression, getPrecedence(node), expression));
     }
   }, {
     key: "reduceYieldGeneratorExpression",
-    value: function reduceYieldGeneratorExpression(node, _ref61) {
-      var expression = _ref61.expression;
+    value: function reduceYieldGeneratorExpression(node, _ref62) {
+      var expression = _ref62.expression;
 
       return seq(t("yield"), t("*"), p(node.expression, getPrecedence(node), expression));
     }
@@ -1313,23 +1343,23 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceVariableDeclaration",
-    value: function reduceVariableDeclaration(node, _ref62) {
-      var declarators = _ref62.declarators;
+    value: function reduceVariableDeclaration(node, _ref63) {
+      var declarators = _ref63.declarators;
 
       return seq(t(node.kind), commaSep(declarators));
     }
   }, {
     key: "reduceVariableDeclarationStatement",
-    value: function reduceVariableDeclarationStatement(node, _ref63) {
-      var declaration = _ref63.declaration;
+    value: function reduceVariableDeclarationStatement(node, _ref64) {
+      var declaration = _ref64.declaration;
 
       return seq(declaration, semiOp());
     }
   }, {
     key: "reduceVariableDeclarator",
-    value: function reduceVariableDeclarator(node, _ref64) {
-      var binding = _ref64.binding;
-      var init = _ref64.init;
+    value: function reduceVariableDeclarator(node, _ref65) {
+      var binding = _ref65.binding;
+      var init = _ref65.init;
 
       var containsIn = init && init.containsIn && !init.containsGroup;
       if (init) {
@@ -1343,17 +1373,17 @@ var CodeGen = (function () {
     }
   }, {
     key: "reduceWhileStatement",
-    value: function reduceWhileStatement(node, _ref65) {
-      var test = _ref65.test;
-      var body = _ref65.body;
+    value: function reduceWhileStatement(node, _ref66) {
+      var test = _ref66.test;
+      var body = _ref66.body;
 
       return objectAssign(seq(t("while"), paren(test), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
   }, {
     key: "reduceWithStatement",
-    value: function reduceWithStatement(node, _ref66) {
-      var object = _ref66.object;
-      var body = _ref66.body;
+    value: function reduceWithStatement(node, _ref67) {
+      var object = _ref67.object;
+      var body = _ref67.body;
 
       return objectAssign(seq(t("with"), paren(object), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
