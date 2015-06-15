@@ -31,7 +31,7 @@
     "expect.js": "0.3.1",
     "istanbul": "0.3.13",
     "mocha": "2.2.4",
-    "shift-parser": "2.1.0"
+    "shift-parser": "3.0.1"
   },
   "keywords": [
     "Shift",

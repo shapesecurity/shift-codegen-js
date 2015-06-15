@@ -78,6 +78,7 @@ function getPrecedence(node) {
       return Precedence.Primary;
 
     case "AssignmentExpression":
+    case "CompoundAssignmentExpression":
     case "YieldExpression":
     case "YieldGeneratorExpression":
       return Precedence.Assignment;
@@ -116,9 +117,9 @@ function getPrecedence(node) {
       return Precedence.Call;
     case "NewExpression":
       return node.arguments.length === 0 ? Precedence.New : Precedence.Member;
-    case "PostfixExpression":
-      return Precedence.Postfix;
-    case "PrefixExpression":
+    case "UpdateExpression":
+      return node.isPrefix ? Precedence.Prefix : Precedence.Postfix;
+    case "UnaryExpression":
       return Precedence.Prefix;
   }
 }
@@ -426,6 +427,19 @@ class CodeGen {
   }
 
   reduceAssignmentExpression(node, {binding, expression}) {
+    let leftCode = binding;
+    let rightCode = expression;
+    let containsIn = expression.containsIn;
+    let startsWithCurly = binding.startsWithCurly;
+    let startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
+    if (getPrecedence(node.expression) < getPrecedence(node)) {
+      rightCode = paren(rightCode);
+      containsIn = false;
+    }
+    return objectAssign(seq(leftCode, t("="), rightCode), {containsIn, startsWithCurly, startsWithFunctionOrClass});
+  }
+
+  reduceCompoundAssignmentExpression(node, {binding, expression}) {
     let leftCode = binding;
     let rightCode = expression;
     let containsIn = expression.containsIn;
@@ -785,8 +799,11 @@ class CodeGen {
     return seq(node.isGenerator ? t("*") : empty(), name, paren(params), brace(body));
   }
 
-  reduceModule(node, {items}) {
-    return seq(...items);
+  reduceModule(node, {directives, items}) {
+    if (items.length) {
+      items[0] = parenToAvoidBeingDirective(node.items[0], items[0]);
+    }
+    return seq(...directives, ...items);
   }
 
   reduceNewExpression(node, {callee, arguments: args}) {
@@ -805,13 +822,17 @@ class CodeGen {
     return state;
   }
 
-  reducePostfixExpression(node, {operand}) {
-    return objectAssign(
-      seq(p(node.operand, Precedence.New, operand), t(node.operator)),
-      {startsWithCurly: operand.startsWithCurly, startsWithFunctionOrClass: operand.startsWithFunctionOrClass});
+  reduceUpdateExpression(node, {operand}) {
+    if (node.isPrefix) {
+      return this.reduceUnaryExpression(...arguments);
+    } else {
+      return objectAssign(
+        seq(p(node.operand, Precedence.New, operand), t(node.operator)),
+        {startsWithCurly: operand.startsWithCurly, startsWithFunctionOrClass: operand.startsWithFunctionOrClass});
+    }
   }
 
-  reducePrefixExpression(node, {operand}) {
+  reduceUnaryExpression(node, {operand}) {
     return seq(t(node.operator), p(node.operand, getPrecedence(node), operand));
   }
 
@@ -819,8 +840,11 @@ class CodeGen {
     return seq(t("return"), expression || empty(), semiOp());
   }
 
-  reduceScript(node, {body}) {
-    return body;
+  reduceScript(node, {directives, statements}) {
+    if (statements.length) {
+      statements[0] = parenToAvoidBeingDirective(node.statements[0], statements[0]);
+    }
+    return seq(...directives, ...statements);
   }
 
   reduceSetter(node, {name, param, body}) {
