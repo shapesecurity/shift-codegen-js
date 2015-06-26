@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "test": "mocha --inline-diffs --check-leaks --ui tdd --reporter dot --timeout 5000 --recursive test",
-    "build": "babel --auxiliary-comment 'istanbul ignore next' --modules commonStrict --source-maps-inline --out-dir dist src",
+    "build": "babel --auxiliary-comment-before 'istanbul ignore next' --modules commonStrict --source-maps-inline --out-dir dist src",
     "generate-coverage": "istanbul cover _mocha -- --inline-diffs --check-leaks --ui tdd --reporter dot --timeout 5000 --recursive test",
     "check-coverage": "istanbul check-coverage --statements 100 --functions 100 --branches 100 --lines 100",
     "cjsify": "cjsify --export ShiftCodegen lib/index.js > shift-codegen.js"
@@ -25,7 +25,7 @@
     "shift-reducer": "^2.0.3"
   },
   "devDependencies": {
-    "babel": "5.2.17",
+    "babel": "5.6.12",
     "commonjs-everywhere": "0.9.7",
     "everything.js": "^1.0.3",
     "expect.js": "0.3.1",
