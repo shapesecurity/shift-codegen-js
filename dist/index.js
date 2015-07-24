@@ -230,9 +230,10 @@ var CodeRep = function CodeRep() {
 
   this.containsIn = false;
   this.containsGroup = false;
-  // restricted tokens: {, function, class
+  // restricted lookaheads: {, function, class, let, let [
   this.startsWithCurly = false;
   this.startsWithFunctionOrClass = false;
+  this.startsWithLet = false;
   this.endsWithMissingElse = false;
 };
 
@@ -800,7 +801,11 @@ var CodeGen = (function () {
       var object = _ref19.object;
       var expression = _ref19.expression;
 
-      return objectAssign(seq(p(node.object, getPrecedence(node), object), bracket(expression)), { startsWithCurly: object.startsWithCurly, startsWithFunctionOrClass: object.startsWithFunctionOrClass });
+      return objectAssign(seq(p(node.object, getPrecedence(node), object), bracket(expression)), {
+        startsWithLet: object.startsWithLet,
+        startsWithCurly: object.startsWithCurly,
+        startsWithFunctionOrClass: object.startsWithFunctionOrClass
+      });
     }
   }, {
     key: "reduceComputedPropertyName",
@@ -893,7 +898,7 @@ var CodeGen = (function () {
       var body = _ref27.body;
 
       left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
-      return objectAssign(seq(t("for"), paren(seq(left, t("of"), right)), body), { endsWithMissingElse: body.endsWithMissingElse });
+      return objectAssign(seq(t("for"), paren(seq(left.startsWithLet ? paren(left) : left, t("of"), right)), body), { endsWithMissingElse: body.endsWithMissingElse });
     }
   }, {
     key: "reduceForStatement",
@@ -973,7 +978,11 @@ var CodeGen = (function () {
   }, {
     key: "reduceIdentifierExpression",
     value: function reduceIdentifierExpression(node) {
-      return t(node.name);
+      var a = t(node.name);
+      if (node.name === "let") {
+        a.startsWithLet = true;
+      }
+      return a;
     }
   }, {
     key: "reduceIfStatement",
@@ -1206,6 +1215,7 @@ var CodeGen = (function () {
       var property = _ref52.property;
 
       var state = seq(p(node.object, getPrecedence(node), object), t("."), t(property));
+      state.startsWithLet = object.startsWithLet;
       state.startsWithCurly = object.startsWithCurly;
       state.startsWithFunctionOrClass = object.startsWithFunctionOrClass;
       return state;

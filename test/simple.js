@@ -88,6 +88,14 @@ describe("Code generator", function () {
       expect(codeGen(parse(expected))).be(expected);
     }
 
+    function test2Script(expected, source) {
+      if (arguments.length !== 2) {
+        throw new Error('Not supported');
+      }
+      expect(codeGen(parseScript(source))).be(expected);
+      expect(codeGen(parseScript(expected))).be(expected);
+    }
+
     it("Directive", function () {
       testShift("\"use strict\"",
         { type: "Script", directives: [{ type: "Directive", rawValue: "use strict" }], statements: [] }
@@ -499,6 +507,9 @@ describe("Code generator", function () {
       test("for(a of b);");
       test("for([a]of[b]);");
       test("for(let[a]of[b]);");
+      testScript("for((let.a)of b);");
+      testScript("for((let[a])of b);");
+      test2Script("for((let.a)of b);", "for((let).a of b);");
     });
 
     it("LiteralNumericExpression", function () {
