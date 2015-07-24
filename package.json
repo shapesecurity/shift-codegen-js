@@ -21,16 +21,16 @@
   },
   "dependencies": {
     "esutils": "^2.0.2",
-    "object-assign": "^2.0.0",
+    "object-assign": "^3.0.0",
     "shift-reducer": "^2.0.3"
   },
   "devDependencies": {
-    "babel": "5.6.12",
+    "babel": "5.8.3",
     "commonjs-everywhere": "0.9.7",
     "everything.js": "^1.0.3",
     "expect.js": "0.3.1",
-    "istanbul": "0.3.13",
-    "mocha": "2.2.4",
+    "istanbul": "0.3.17",
+    "mocha": "2.2.5",
     "shift-parser": "3.0.1"
   },
   "keywords": [
