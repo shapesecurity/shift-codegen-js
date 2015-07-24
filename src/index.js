@@ -191,6 +191,7 @@ class CodeRep {
     this.startsWithCurly = false;
     this.startsWithFunctionOrClass = false;
     this.startsWithLet = false;
+    this.startsWithLetSquareBracket = false;
     this.endsWithMissingElse = false;
   }
 }
@@ -432,12 +433,13 @@ class CodeGen {
     let rightCode = expression;
     let containsIn = expression.containsIn;
     let startsWithCurly = binding.startsWithCurly;
+    let startsWithLetSquareBracket = binding.startsWithLetSquareBracket;
     let startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
     if (getPrecedence(node.expression) < getPrecedence(node)) {
       rightCode = paren(rightCode);
       containsIn = false;
     }
-    return objectAssign(seq(leftCode, t("="), rightCode), {containsIn, startsWithCurly, startsWithFunctionOrClass});
+    return objectAssign(seq(leftCode, t("="), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
   }
 
   reduceCompoundAssignmentExpression(node, {binding, expression}) {
@@ -445,22 +447,25 @@ class CodeGen {
     let rightCode = expression;
     let containsIn = expression.containsIn;
     let startsWithCurly = binding.startsWithCurly;
+    let startsWithLetSquareBracket = binding.startsWithLetSquareBracket;
     let startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
     if (getPrecedence(node.expression) < getPrecedence(node)) {
       rightCode = paren(rightCode);
       containsIn = false;
     }
-    return objectAssign(seq(leftCode, t(node.operator), rightCode), {containsIn, startsWithCurly, startsWithFunctionOrClass});
+    return objectAssign(seq(leftCode, t(node.operator), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
   }
 
   reduceBinaryExpression(node, {left, right}) {
     let leftCode = left;
     let startsWithCurly = left.startsWithCurly;
+    let startsWithLetSquareBracket = left.startsWithLetSquareBracket;
     let startsWithFunctionOrClass = left.startsWithFunctionOrClass;
     let leftContainsIn = left.containsIn;
     if (getPrecedence(node.left) < getPrecedence(node)) {
       leftCode = paren(leftCode);
       startsWithCurly = false;
+      startsWithLetSquareBracket = false;
       startsWithFunctionOrClass = false;
       leftContainsIn = false;
     }
@@ -476,8 +481,10 @@ class CodeGen {
         containsIn: leftContainsIn || rightContainsIn || node.operator === "in",
         containsGroup: node.operator == ",",
         startsWithCurly,
+        startsWithLetSquareBracket,
         startsWithFunctionOrClass
-      });
+      }
+    );
   }
 
   reduceBindingWithDefault(node, {binding, init}) {
@@ -485,7 +492,11 @@ class CodeGen {
   }
 
   reduceBindingIdentifier(node) {
-    return t(node.name);
+    let a = t(node.name);
+    if (node.name === "let") {
+      a.startsWithLet = true;
+    }
+    return a;
   }
 
   reduceArrayBinding(node, {elements, restElement}) {
@@ -532,7 +543,12 @@ class CodeGen {
   reduceCallExpression(node, {callee, arguments: args}) {
     return objectAssign(
       seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(args))),
-      {startsWithCurly: callee.startsWithCurly, startsWithFunctionOrClass: callee.startsWithFunctionOrClass});
+      {
+        startsWithCurly: callee.startsWithCurly,
+        startsWithLetSquareBracket: callee.startsWithLetSquareBracket,
+        startsWithFunctionOrClass: callee.startsWithFunctionOrClass,
+      }
+    );
   }
 
   reduceCatchClause(node, {binding, body}) {
@@ -567,10 +583,14 @@ class CodeGen {
   }
 
   reduceComputedMemberExpression(node, {object, expression}) {
+    let startsWithLetSquareBracket =
+      object.startsWithLetSquareBracket ||
+      node.object.type === "IdentifierExpression" && node.object.name === "let";
     return objectAssign(
       seq(p(node.object, getPrecedence(node), object), bracket(expression)),
       {
         startsWithLet: object.startsWithLet,
+        startsWithLetSquareBracket,
         startsWithCurly: object.startsWithCurly,
         startsWithFunctionOrClass: object.startsWithFunctionOrClass,
       }
@@ -584,6 +604,7 @@ class CodeGen {
   reduceConditionalExpression(node, {test, consequent, alternate}) {
     let containsIn = test.containsIn || alternate.containsIn;
     let startsWithCurly = test.startsWithCurly;
+    let startsWithLetSquareBracket = test.startsWithLetSquareBracket;
     let startsWithFunctionOrClass = test.startsWithFunctionOrClass;
     return objectAssign(
       seq(
@@ -592,6 +613,7 @@ class CodeGen {
         p(node.alternate, Precedence.Assignment, alternate)), {
           containsIn,
           startsWithCurly,
+          startsWithLetSquareBracket,
           startsWithFunctionOrClass
         });
   }
@@ -617,7 +639,11 @@ class CodeGen {
   }
 
   reduceExpressionStatement(node, {expression}) {
-    return seq((expression.startsWithCurly || expression.startsWithFunctionOrClass ? paren(expression) : expression), semiOp());
+    let needsParens =
+      expression.startsWithCurly ||
+      expression.startsWithLetSquareBracket ||
+      expression.startsWithFunctionOrClass;
+    return seq((needsParens ? paren(expression) : expression), semiOp());
   }
 
   reduceForInStatement(node, {left, right, body}) {
@@ -838,7 +864,12 @@ class CodeGen {
     } else {
       return objectAssign(
         seq(p(node.operand, Precedence.New, operand), t(node.operator)),
-        {startsWithCurly: operand.startsWithCurly, startsWithFunctionOrClass: operand.startsWithFunctionOrClass});
+        {
+          startsWithCurly: operand.startsWithCurly,
+          startsWithLetSquareBracket: operand.startsWithLetSquareBracket,
+          startsWithFunctionOrClass: operand.startsWithFunctionOrClass
+        }
+      );
     }
   }
 
@@ -869,6 +900,7 @@ class CodeGen {
     const state = seq(p(node.object, getPrecedence(node), object), t("."), t(property));
     state.startsWithLet = object.startsWithLet;
     state.startsWithCurly = object.startsWithCurly;
+    state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;
     state.startsWithFunctionOrClass = object.startsWithFunctionOrClass;
     return state;
   }
@@ -924,6 +956,7 @@ class CodeGen {
     state = seq(state, t("`"));
     if (node.tag != null) {
       state.startsWithCurly = tag.startsWithCurly;
+      state.startsWithLetSquareBracket = tag.startsWithLetSquareBracket;
       state.startsWithFunctionOrClass = tag.startsWithFunctionOrClass;
     }
     return state;

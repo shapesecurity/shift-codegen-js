@@ -234,6 +234,7 @@ var CodeRep = function CodeRep() {
   this.startsWithCurly = false;
   this.startsWithFunctionOrClass = false;
   this.startsWithLet = false;
+  this.startsWithLetSquareBracket = false;
   this.endsWithMissingElse = false;
 };
 
@@ -608,12 +609,13 @@ var CodeGen = (function () {
       var rightCode = expression;
       var containsIn = expression.containsIn;
       var startsWithCurly = binding.startsWithCurly;
+      var startsWithLetSquareBracket = binding.startsWithLetSquareBracket;
       var startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
       if (getPrecedence(node.expression) < getPrecedence(node)) {
         rightCode = paren(rightCode);
         containsIn = false;
       }
-      return objectAssign(seq(leftCode, t("="), rightCode), { containsIn: containsIn, startsWithCurly: startsWithCurly, startsWithFunctionOrClass: startsWithFunctionOrClass });
+      return objectAssign(seq(leftCode, t("="), rightCode), { containsIn: containsIn, startsWithCurly: startsWithCurly, startsWithLetSquareBracket: startsWithLetSquareBracket, startsWithFunctionOrClass: startsWithFunctionOrClass });
     }
   }, {
     key: "reduceCompoundAssignmentExpression",
@@ -625,12 +627,13 @@ var CodeGen = (function () {
       var rightCode = expression;
       var containsIn = expression.containsIn;
       var startsWithCurly = binding.startsWithCurly;
+      var startsWithLetSquareBracket = binding.startsWithLetSquareBracket;
       var startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
       if (getPrecedence(node.expression) < getPrecedence(node)) {
         rightCode = paren(rightCode);
         containsIn = false;
       }
-      return objectAssign(seq(leftCode, t(node.operator), rightCode), { containsIn: containsIn, startsWithCurly: startsWithCurly, startsWithFunctionOrClass: startsWithFunctionOrClass });
+      return objectAssign(seq(leftCode, t(node.operator), rightCode), { containsIn: containsIn, startsWithCurly: startsWithCurly, startsWithLetSquareBracket: startsWithLetSquareBracket, startsWithFunctionOrClass: startsWithFunctionOrClass });
     }
   }, {
     key: "reduceBinaryExpression",
@@ -640,11 +643,13 @@ var CodeGen = (function () {
 
       var leftCode = left;
       var startsWithCurly = left.startsWithCurly;
+      var startsWithLetSquareBracket = left.startsWithLetSquareBracket;
       var startsWithFunctionOrClass = left.startsWithFunctionOrClass;
       var leftContainsIn = left.containsIn;
       if (getPrecedence(node.left) < getPrecedence(node)) {
         leftCode = paren(leftCode);
         startsWithCurly = false;
+        startsWithLetSquareBracket = false;
         startsWithFunctionOrClass = false;
         leftContainsIn = false;
       }
@@ -658,6 +663,7 @@ var CodeGen = (function () {
         containsIn: leftContainsIn || rightContainsIn || node.operator === "in",
         containsGroup: node.operator == ",",
         startsWithCurly: startsWithCurly,
+        startsWithLetSquareBracket: startsWithLetSquareBracket,
         startsWithFunctionOrClass: startsWithFunctionOrClass
       });
     }
@@ -672,7 +678,11 @@ var CodeGen = (function () {
   }, {
     key: "reduceBindingIdentifier",
     value: function reduceBindingIdentifier(node) {
-      return t(node.name);
+      var a = t(node.name);
+      if (node.name === "let") {
+        a.startsWithLet = true;
+      }
+      return a;
     }
   }, {
     key: "reduceArrayBinding",
@@ -745,7 +755,11 @@ var CodeGen = (function () {
       var callee = _ref14.callee;
       var args = _ref14.arguments;
 
-      return objectAssign(seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(args))), { startsWithCurly: callee.startsWithCurly, startsWithFunctionOrClass: callee.startsWithFunctionOrClass });
+      return objectAssign(seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(args))), {
+        startsWithCurly: callee.startsWithCurly,
+        startsWithLetSquareBracket: callee.startsWithLetSquareBracket,
+        startsWithFunctionOrClass: callee.startsWithFunctionOrClass
+      });
     }
   }, {
     key: "reduceCatchClause",
@@ -801,8 +815,10 @@ var CodeGen = (function () {
       var object = _ref19.object;
       var expression = _ref19.expression;
 
+      var startsWithLetSquareBracket = object.startsWithLetSquareBracket || node.object.type === "IdentifierExpression" && node.object.name === "let";
       return objectAssign(seq(p(node.object, getPrecedence(node), object), bracket(expression)), {
         startsWithLet: object.startsWithLet,
+        startsWithLetSquareBracket: startsWithLetSquareBracket,
         startsWithCurly: object.startsWithCurly,
         startsWithFunctionOrClass: object.startsWithFunctionOrClass
       });
@@ -823,10 +839,12 @@ var CodeGen = (function () {
 
       var containsIn = test.containsIn || alternate.containsIn;
       var startsWithCurly = test.startsWithCurly;
+      var startsWithLetSquareBracket = test.startsWithLetSquareBracket;
       var startsWithFunctionOrClass = test.startsWithFunctionOrClass;
       return objectAssign(seq(p(node.test, Precedence.LogicalOR, test), t("?"), p(node.consequent, Precedence.Assignment, consequent), t(":"), p(node.alternate, Precedence.Assignment, alternate)), {
         containsIn: containsIn,
         startsWithCurly: startsWithCurly,
+        startsWithLetSquareBracket: startsWithLetSquareBracket,
         startsWithFunctionOrClass: startsWithFunctionOrClass
       });
     }
@@ -868,7 +886,8 @@ var CodeGen = (function () {
     value: function reduceExpressionStatement(node, _ref25) {
       var expression = _ref25.expression;
 
-      return seq(expression.startsWithCurly || expression.startsWithFunctionOrClass ? paren(expression) : expression, semiOp());
+      var needsParens = expression.startsWithCurly || expression.startsWithLetSquareBracket || expression.startsWithFunctionOrClass;
+      return seq(needsParens ? paren(expression) : expression, semiOp());
     }
   }, {
     key: "reduceForInStatement",
@@ -1166,7 +1185,11 @@ var CodeGen = (function () {
       if (node.isPrefix) {
         return this.reduceUnaryExpression.apply(this, arguments);
       } else {
-        return objectAssign(seq(p(node.operand, Precedence.New, operand), t(node.operator)), { startsWithCurly: operand.startsWithCurly, startsWithFunctionOrClass: operand.startsWithFunctionOrClass });
+        return objectAssign(seq(p(node.operand, Precedence.New, operand), t(node.operator)), {
+          startsWithCurly: operand.startsWithCurly,
+          startsWithLetSquareBracket: operand.startsWithLetSquareBracket,
+          startsWithFunctionOrClass: operand.startsWithFunctionOrClass
+        });
       }
     }
   }, {
@@ -1217,6 +1240,7 @@ var CodeGen = (function () {
       var state = seq(p(node.object, getPrecedence(node), object), t("."), t(property));
       state.startsWithLet = object.startsWithLet;
       state.startsWithCurly = object.startsWithCurly;
+      state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;
       state.startsWithFunctionOrClass = object.startsWithFunctionOrClass;
       return state;
     }
@@ -1292,6 +1316,7 @@ var CodeGen = (function () {
       state = seq(state, t("`"));
       if (node.tag != null) {
         state.startsWithCurly = tag.startsWithCurly;
+        state.startsWithLetSquareBracket = tag.startsWithLetSquareBracket;
         state.startsWithFunctionOrClass = tag.startsWithFunctionOrClass;
       }
       return state;
