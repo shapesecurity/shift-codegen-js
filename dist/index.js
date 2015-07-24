@@ -237,13 +237,13 @@ var CodeRep = function CodeRep() {
 };
 
 var Empty = (function (_CodeRep) {
+  _inherits(Empty, _CodeRep);
+
   function Empty() {
     _classCallCheck(this, Empty);
 
     _get(Object.getPrototypeOf(Empty.prototype), "constructor", this).call(this);
   }
-
-  _inherits(Empty, _CodeRep);
 
   _createClass(Empty, [{
     key: "emit",
@@ -254,14 +254,14 @@ var Empty = (function (_CodeRep) {
 })(CodeRep);
 
 var Token = (function (_CodeRep2) {
+  _inherits(Token, _CodeRep2);
+
   function Token(token) {
     _classCallCheck(this, Token);
 
     _get(Object.getPrototypeOf(Token.prototype), "constructor", this).call(this);
     this.token = token;
   }
-
-  _inherits(Token, _CodeRep2);
 
   _createClass(Token, [{
     key: "emit",
@@ -274,14 +274,14 @@ var Token = (function (_CodeRep2) {
 })(CodeRep);
 
 var NumberCodeRep = (function (_CodeRep3) {
+  _inherits(NumberCodeRep, _CodeRep3);
+
   function NumberCodeRep(number) {
     _classCallCheck(this, NumberCodeRep);
 
     _get(Object.getPrototypeOf(NumberCodeRep.prototype), "constructor", this).call(this);
     this.number = number;
   }
-
-  _inherits(NumberCodeRep, _CodeRep3);
 
   _createClass(NumberCodeRep, [{
     key: "emit",
@@ -294,14 +294,14 @@ var NumberCodeRep = (function (_CodeRep3) {
 })(CodeRep);
 
 var Paren = (function (_CodeRep4) {
+  _inherits(Paren, _CodeRep4);
+
   function Paren(expr) {
     _classCallCheck(this, Paren);
 
     _get(Object.getPrototypeOf(Paren.prototype), "constructor", this).call(this);
     this.expr = expr;
   }
-
-  _inherits(Paren, _CodeRep4);
 
   _createClass(Paren, [{
     key: "emit",
@@ -316,14 +316,14 @@ var Paren = (function (_CodeRep4) {
 })(CodeRep);
 
 var Bracket = (function (_CodeRep5) {
+  _inherits(Bracket, _CodeRep5);
+
   function Bracket(expr) {
     _classCallCheck(this, Bracket);
 
     _get(Object.getPrototypeOf(Bracket.prototype), "constructor", this).call(this);
     this.expr = expr;
   }
-
-  _inherits(Bracket, _CodeRep5);
 
   _createClass(Bracket, [{
     key: "emit",
@@ -338,14 +338,14 @@ var Bracket = (function (_CodeRep5) {
 })(CodeRep);
 
 var Brace = (function (_CodeRep6) {
+  _inherits(Brace, _CodeRep6);
+
   function Brace(expr) {
     _classCallCheck(this, Brace);
 
     _get(Object.getPrototypeOf(Brace.prototype), "constructor", this).call(this);
     this.expr = expr;
   }
-
-  _inherits(Brace, _CodeRep6);
 
   _createClass(Brace, [{
     key: "emit",
@@ -360,14 +360,14 @@ var Brace = (function (_CodeRep6) {
 })(CodeRep);
 
 var NoIn = (function (_CodeRep7) {
+  _inherits(NoIn, _CodeRep7);
+
   function NoIn(expr) {
     _classCallCheck(this, NoIn);
 
     _get(Object.getPrototypeOf(NoIn.prototype), "constructor", this).call(this);
     this.expr = expr;
   }
-
-  _inherits(NoIn, _CodeRep7);
 
   _createClass(NoIn, [{
     key: "emit",
@@ -380,14 +380,14 @@ var NoIn = (function (_CodeRep7) {
 })(CodeRep);
 
 var ContainsIn = (function (_CodeRep8) {
+  _inherits(ContainsIn, _CodeRep8);
+
   function ContainsIn(expr) {
     _classCallCheck(this, ContainsIn);
 
     _get(Object.getPrototypeOf(ContainsIn.prototype), "constructor", this).call(this);
     this.expr = expr;
   }
-
-  _inherits(ContainsIn, _CodeRep8);
 
   _createClass(ContainsIn, [{
     key: "emit",
@@ -406,14 +406,14 @@ var ContainsIn = (function (_CodeRep8) {
 })(CodeRep);
 
 var Seq = (function (_CodeRep9) {
+  _inherits(Seq, _CodeRep9);
+
   function Seq(children) {
     _classCallCheck(this, Seq);
 
     _get(Object.getPrototypeOf(Seq.prototype), "constructor", this).call(this);
     this.children = children;
   }
-
-  _inherits(Seq, _CodeRep9);
 
   _createClass(Seq, [{
     key: "emit",
@@ -428,26 +428,26 @@ var Seq = (function (_CodeRep9) {
 })(CodeRep);
 
 var Semi = (function (_Token) {
+  _inherits(Semi, _Token);
+
   function Semi() {
     _classCallCheck(this, Semi);
 
     _get(Object.getPrototypeOf(Semi.prototype), "constructor", this).call(this, ";");
   }
 
-  _inherits(Semi, _Token);
-
   return Semi;
 })(Token);
 
 var CommaSep = (function (_CodeRep10) {
+  _inherits(CommaSep, _CodeRep10);
+
   function CommaSep(children) {
     _classCallCheck(this, CommaSep);
 
     _get(Object.getPrototypeOf(CommaSep.prototype), "constructor", this).call(this);
     this.children = children;
   }
-
-  _inherits(CommaSep, _CodeRep10);
 
   _createClass(CommaSep, [{
     key: "emit",
@@ -468,13 +468,13 @@ var CommaSep = (function (_CodeRep10) {
 })(CodeRep);
 
 var SemiOp = (function (_CodeRep11) {
+  _inherits(SemiOp, _CodeRep11);
+
   function SemiOp() {
     _classCallCheck(this, SemiOp);
 
     _get(Object.getPrototypeOf(SemiOp.prototype), "constructor", this).call(this);
   }
-
-  _inherits(SemiOp, _CodeRep11);
 
   _createClass(SemiOp, [{
     key: "emit",
@@ -487,6 +487,8 @@ var SemiOp = (function (_CodeRep11) {
 })(CodeRep);
 
 var Init = (function (_CodeRep12) {
+  _inherits(Init, _CodeRep12);
+
   function Init(binding, init) {
     _classCallCheck(this, Init);
 
@@ -494,8 +496,6 @@ var Init = (function (_CodeRep12) {
     this.binding = binding;
     this.init = init;
   }
-
-  _inherits(Init, _CodeRep12);
 
   _createClass(Init, [{
     key: "emit",
