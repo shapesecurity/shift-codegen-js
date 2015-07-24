@@ -507,6 +507,7 @@ describe("Code generator", function () {
       test("for(a of b);");
       test("for([a]of[b]);");
       test("for(let[a]of[b]);");
+      testScript("for((let)of b);");
       testScript("for((let.a)of b);");
       testScript("for((let[a])of b);");
       test2Script("for((let.a)of b);", "for((let).a of b);");
@@ -600,6 +601,13 @@ describe("Code generator", function () {
     it("ExpressionStatement", function () {
       test("a");
       test("({a:3})");
+      test("(function(){})");
+      test("(class{})");
+      testScript("let");
+      testScript("(let[a])");
+      testScript("(let[a]++)");
+      testScript("(let[a]=0)");
+      testScript("(let[a].b`c`||e?f:g)");
       test("do({a:3});while(1)");
       test("~{a:3}");
       test("({a:3}+1)");
