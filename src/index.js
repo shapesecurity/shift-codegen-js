@@ -3,9 +3,9 @@ import * as objectAssign from "object-assign";
 import {keyword} from "esutils";
 import {TokenStream} from "./token_stream";
 
-export default function codeGen(script) {
+export default function codeGen(script, pretty) {
   let ts = new TokenStream;
-  let rep = reduce(INSTANCE, script);
+  let rep = reduce(pretty ? PRETTY : COMPACT, script);
   rep.emit(ts);
   return ts.result;
 }
@@ -391,26 +391,25 @@ function commaSep(pieces) {
   return new CommaSep(pieces);
 }
 
-function brace(rep) {
-  return new Brace(rep);
-}
-
-function semiOp() {
-  return new SemiOp;
-}
-
-function parenToAvoidBeingDirective(element, original) {
-  if (element && element.type === "ExpressionStatement" && element.expression.type === "LiteralStringExpression") {
-    return seq(paren(original.children[0]), semiOp());
-  }
-  return original;
-}
-
 function getAssignmentExpr(state) {
   return state ? (state.containsGroup ? paren(state) : state) : empty();
 }
 
 class CodeGen {
+  parenToAvoidBeingDirective(element, original) {
+    if (element && element.type === "ExpressionStatement" && element.expression.type === "LiteralStringExpression") {
+      return seq(paren(original.children[0]), this.semiOp());
+    }
+    return original;
+  }
+
+  brace(rep) {
+    return new Brace(rep)
+  }
+
+  semiOp() {
+    return new SemiOp;
+  }
 
   reduceArrayExpression(node, {elements}) {
     if (elements.length === 0) {
@@ -514,7 +513,7 @@ class CodeGen {
   }
 
   reduceObjectBinding(node, {properties}) {
-    let state = brace(commaSep(properties));
+    let state = this.brace(commaSep(properties));
     state.startsWithCurly = true;
     return state;
   }
@@ -529,7 +528,7 @@ class CodeGen {
   }
 
   reduceBlock(node, {statements}) {
-    return brace(seq(...statements));
+    return this.brace(seq(...statements));
   }
 
   reduceBlockStatement(node, {block}) {
@@ -537,7 +536,7 @@ class CodeGen {
   }
 
   reduceBreakStatement(node, {label}) {
-    return seq(t("break"), label ? t(label) : empty(), semiOp());
+    return seq(t("break"), label ? t(label) : empty(), this.semiOp());
   }
 
   reduceCallExpression(node, {callee, arguments: args}) {
@@ -619,7 +618,7 @@ class CodeGen {
   }
 
   reduceContinueStatement(node, {label}) {
-    return seq(t("continue"), label ? t(label) : empty(), semiOp());
+    return seq(t("continue"), label ? t(label) : empty(), this.semiOp());
   }
 
   reduceDataProperty(node, {name, expression}) {
@@ -627,11 +626,11 @@ class CodeGen {
   }
 
   reduceDebuggerStatement(node) {
-    return seq(t("debugger"), semiOp());
+    return seq(t("debugger"), this.semiOp());
   }
 
   reduceDoWhileStatement(node, {body, test}) {
-    return seq(t("do"), body, t("while"), paren(test), semiOp());
+    return seq(t("do"), body, t("while"), paren(test), this.semiOp());
   }
 
   reduceEmptyStatement(node) {
@@ -643,7 +642,7 @@ class CodeGen {
       expression.startsWithCurly ||
       expression.startsWithLetSquareBracket ||
       expression.startsWithFunctionOrClass;
-    return seq((needsParens ? paren(expression) : expression), semiOp());
+    return seq((needsParens ? paren(expression) : expression), this.semiOp());
   }
 
   reduceForInStatement(node, {left, right, body}) {
@@ -683,17 +682,17 @@ class CodeGen {
 
   reduceFunctionBody(node, {directives, statements}) {
     if (statements.length) {
-      statements[0] = parenToAvoidBeingDirective(node.statements[0], statements[0]);
+      statements[0] = this.parenToAvoidBeingDirective(node.statements[0], statements[0]);
     }
     return seq(...directives, ...statements);
   }
 
   reduceFunctionDeclaration(node, {name, params, body}) {
-    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, paren(params), brace(body));
+    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, paren(params), this.brace(body));
   }
 
   reduceFunctionExpression(node, {name, params, body}) {
-    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? name : empty(), paren(params), brace(body));
+    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? name : empty(), paren(params), this.brace(body));
     state.startsWithFunctionOrClass = true;
     return state;
   }
@@ -707,7 +706,7 @@ class CodeGen {
       params = paren(params);
     }
     if (node.body.type === "FunctionBody") {
-      body = brace(body);
+      body = this.brace(body);
     } else if (body.startsWithCurly) {
       body = paren(body);
     }
@@ -715,7 +714,7 @@ class CodeGen {
   }
 
   reduceGetter(node, {name, body}) {
-    return seq(t("get"), name, paren(empty()), brace(body));
+    return seq(t("get"), name, paren(empty()), this.brace(body));
   }
 
   reduceIdentifierExpression(node) {
@@ -728,7 +727,7 @@ class CodeGen {
 
   reduceIfStatement(node, {test, consequent, alternate}) {
     if (alternate && consequent.endsWithMissingElse) {
-      consequent = brace(consequent);
+      consequent = this.brace(consequent);
     }
     return objectAssign(
       seq(t("if"), paren(test), consequent, alternate ? seq(t("else"), alternate) : empty()),
@@ -741,12 +740,12 @@ class CodeGen {
       bindings.push(defaultBinding);
     }
     if (namedImports.length > 0) {
-      bindings.push(brace(commaSep(namedImports)));
+      bindings.push(this.brace(commaSep(namedImports)));
     }
     if (bindings.length === 0) {
-      return seq(t("import"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
+      return seq(t("import"), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
     }
-    return seq(t("import"), commaSep(bindings), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
+    return seq(t("import"), commaSep(bindings), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
   }
 
   reduceImportNamespace(node, {defaultBinding, namespaceBinding}) {
@@ -758,7 +757,7 @@ class CodeGen {
       namespaceBinding,
       t("from"),
       t(escapeStringLiteral(node.moduleSpecifier)),
-      semiOp()
+      this.semiOp()
     );
   }
 
@@ -768,11 +767,11 @@ class CodeGen {
   }
 
   reduceExportAllFrom(node) {
-    return seq(t("export"), t("*"), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
+    return seq(t("export"), t("*"), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp()));
+    return seq(t("export"), this.brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp()));
   }
 
   reduceExport(node, {declaration}) {
@@ -781,7 +780,7 @@ class CodeGen {
       case "ClassDeclaration":
         break;
       default:
-        declaration = seq(declaration, semiOp());
+        declaration = seq(declaration, this.semiOp());
     }
     return seq(t("export"), declaration);
   }
@@ -793,7 +792,7 @@ class CodeGen {
       case "ClassDeclaration":
         break;
       default:
-        body = seq(body, semiOp());
+        body = seq(body, this.semiOp());
     }
     return seq(t("export default"), body);
   }
@@ -832,12 +831,12 @@ class CodeGen {
   }
 
   reduceMethod(node, {name, params, body}) {
-    return seq(node.isGenerator ? t("*") : empty(), name, paren(params), brace(body));
+    return seq(node.isGenerator ? t("*") : empty(), name, paren(params), this.brace(body));
   }
 
   reduceModule(node, {directives, items}) {
     if (items.length) {
-      items[0] = parenToAvoidBeingDirective(node.items[0], items[0]);
+      items[0] = this.parenToAvoidBeingDirective(node.items[0], items[0]);
     }
     return seq(...directives, ...items);
   }
@@ -853,7 +852,7 @@ class CodeGen {
   }
 
   reduceObjectExpression(node, {properties}) {
-    let state = brace(commaSep(properties));
+    let state = this.brace(commaSep(properties));
     state.startsWithCurly = true;
     return state;
   }
@@ -878,18 +877,18 @@ class CodeGen {
   }
 
   reduceReturnStatement(node, {expression}) {
-    return seq(t("return"), expression || empty(), semiOp());
+    return seq(t("return"), expression || empty(), this.semiOp());
   }
 
   reduceScript(node, {directives, statements}) {
     if (statements.length) {
-      statements[0] = parenToAvoidBeingDirective(node.statements[0], statements[0]);
+      statements[0] = this.parenToAvoidBeingDirective(node.statements[0], statements[0]);
     }
     return seq(...directives, ...statements);
   }
 
   reduceSetter(node, {name, param, body}) {
-    return seq(t("set"), name, paren(param), brace(body));
+    return seq(t("set"), name, paren(param), this.brace(body));
   }
 
   reduceShorthandProperty(node) {
@@ -928,14 +927,14 @@ class CodeGen {
   }
 
   reduceSwitchStatement(node, {discriminant, cases}) {
-    return seq(t("switch"), paren(discriminant), brace(seq(...cases)));
+    return seq(t("switch"), paren(discriminant), this.brace(seq(...cases)));
   }
 
   reduceSwitchStatementWithDefault(node, {discriminant, preDefaultCases, defaultCase, postDefaultCases}) {
     return seq(
       t("switch"),
       paren(discriminant),
-      brace(seq(...preDefaultCases, defaultCase, ...postDefaultCases)));
+      this.brace(seq(...preDefaultCases, defaultCase, ...postDefaultCases)));
   }
 
   reduceTemplateExpression(node, {tag, elements}) {
@@ -971,7 +970,7 @@ class CodeGen {
   }
 
   reduceThrowStatement(node, {expression}) {
-    return seq(t("throw"), expression, semiOp());
+    return seq(t("throw"), expression, this.semiOp());
   }
 
   reduceTryCatchStatement(node, {body, catchClause}) {
@@ -993,7 +992,7 @@ class CodeGen {
 
   reduceDirective(node) {
     let delim = /^(?:[^"\\]|\\.)*$/.test(node.rawValue) ? "\"" : "'";
-    return seq(t(delim + node.rawValue + delim), semiOp());
+    return seq(t(delim + node.rawValue + delim), this.semiOp());
   }
 
   reduceVariableDeclaration(node, {declarators}) {
@@ -1001,7 +1000,7 @@ class CodeGen {
   }
 
   reduceVariableDeclarationStatement(node, {declaration}) {
-    return seq(declaration, semiOp());
+    return seq(declaration, this.semiOp());
   }
 
   reduceVariableDeclarator(node, {binding, init}) {
@@ -1027,4 +1026,39 @@ class CodeGen {
   }
 }
 
-const INSTANCE = new CodeGen;
+class FormattedBrace extends CodeRep {
+  constructor(expr) {
+    super();
+    this.expr = expr;
+  }
+
+  emit(ts) {
+    ts.put("{\n");
+    this.expr.emit(ts, false);
+    ts.put("}");
+  }
+}
+
+class FormattedSemiOp extends CodeRep {
+  constructor() {
+    super();
+  }
+
+  emit(ts) {
+    ts.putOptionalSemi();
+    ts.put("\n");
+  }
+}
+
+class FormattedCodeGen extends CodeGen {
+  brace(rep) {
+    return new FormattedBrace(rep);
+  }
+
+  semiOp() {
+    return new FormattedSemiOp;
+  }
+}
+
+const COMPACT = new CodeGen;
+const PRETTY = new FormattedCodeGen;
