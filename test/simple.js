@@ -806,3 +806,22 @@ describe("Code generator", function () {
 
   });
 });
+
+describe("Pretty code generator", function () {
+  function testPretty(source) {
+    expect(codeGen(parse(source), true)).be(source);
+    expect(parse(codeGen(parse(source), true))).eql(parse(source));
+  }
+
+  it("should ouput a newline after brace", function () {
+    testPretty("export default function(){\n}");
+  });
+
+  it("should ouput a newline after semiOp", function () {
+    testPretty("export const FOO=123;\n");
+  });
+
+  it("should ouput no newline after semi", function () {
+    testPretty("for(;;){\n}");
+  });
+});
