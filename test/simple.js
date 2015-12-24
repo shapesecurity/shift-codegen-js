@@ -814,14 +814,14 @@ describe("Pretty code generator", function () {
   }
 
   it("should ouput a newline after brace", function () {
-    testPretty("export default function(){\n}");
+    testPretty("export default function() {\nnull;\n}\n");
   });
 
   it("should ouput a newline after semiOp", function () {
-    testPretty("export const FOO=123;\n");
+    testPretty("export const FOO = 123;\n");
   });
 
   it("should ouput no newline after semi", function () {
-    testPretty("for(;;){\n}");
+    testPretty("for (;;) {}\n");
   });
 });

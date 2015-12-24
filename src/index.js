@@ -183,6 +183,10 @@ function p(node, precedence, a) {
   return getPrecedence(node) < precedence ? paren(a) : a;
 }
 
+function isEmpty(codeRep) {
+  return codeRep instanceof Empty || (codeRep instanceof Seq && codeRep.children.every(isEmpty));
+}
+
 class CodeRep {
   constructor() {
     this.containsIn = false;
@@ -193,6 +197,10 @@ class CodeRep {
     this.startsWithLet = false;
     this.startsWithLetSquareBracket = false;
     this.endsWithMissingElse = false;
+  }
+
+  flatten() {
+    return [this];
   }
 }
 
@@ -237,6 +245,10 @@ class Paren extends CodeRep {
     this.expr.emit(ts, false);
     ts.put(")");
   }
+
+  flatten() {
+    return [this].concat(this.expr.flatten());
+  }
 }
 
 class Bracket extends CodeRep {
@@ -249,6 +261,10 @@ class Bracket extends CodeRep {
     ts.put("[");
     this.expr.emit(ts, false);
     ts.put("]");
+  }
+
+  flatten() {
+    return [this].concat(this.expr.flatten());
   }
 }
 
@@ -263,6 +279,10 @@ class Brace extends CodeRep {
     this.expr.emit(ts, false);
     ts.put("}");
   }
+
+  flatten() {
+    return [this].concat(this.expr.flatten());
+  }
 }
 
 class NoIn extends CodeRep {
@@ -273,6 +293,10 @@ class NoIn extends CodeRep {
 
   emit(ts) {
     this.expr.emit(ts, true);
+  }
+
+  flatten() {
+    return [this].concat(this.expr.flatten());
   }
 }
 
@@ -291,6 +315,10 @@ class ContainsIn extends CodeRep {
       this.expr.emit(ts, false);
     }
   }
+
+  flatten() {
+    return [this].concat(this.expr.flatten());
+  }
 }
 
 class Seq extends CodeRep {
@@ -301,6 +329,10 @@ class Seq extends CodeRep {
 
   emit(ts, noIn) {
     this.children.forEach(cr => cr.emit(ts, noIn));
+  }
+
+  flatten() {
+    return [this].concat(...this.children.map(c => c.flatten()));
   }
 }
 
@@ -327,6 +359,10 @@ class CommaSep extends CodeRep {
       cr.emit(ts, noIn);
     });
   }
+
+  flatten() {
+    return [this].concat(...this.children.map(c => c.flatten()));
+  }
 }
 
 class SemiOp extends CodeRep {
@@ -336,22 +372,6 @@ class SemiOp extends CodeRep {
 
   emit(ts) {
     ts.putOptionalSemi();
-  }
-}
-
-class Init extends CodeRep {
-  constructor(binding, init) {
-    super();
-    this.binding = binding;
-    this.init = init;
-  }
-
-  emit(ts, noIn) {
-    this.binding.emit(ts);
-    if (this.init != null) {
-      ts.put("=");
-      this.init.emit(ts, noIn);
-    }
   }
 }
 
@@ -387,10 +407,6 @@ function empty() {
   return new Empty;
 }
 
-function commaSep(pieces) {
-  return new CommaSep(pieces);
-}
-
 function getAssignmentExpr(state) {
   return state ? (state.containsGroup ? paren(state) : state) : empty();
 }
@@ -407,8 +423,16 @@ class CodeGen {
     return new Brace(rep)
   }
 
+  commaSep(pieces) {
+    return new CommaSep(pieces);
+  }
+
   semiOp() {
     return new SemiOp;
+  }
+
+  space() {
+    return empty();
   }
 
   reduceArrayExpression(node, {elements}) {
@@ -416,9 +440,9 @@ class CodeGen {
       return bracket(empty());
     }
 
-    let content = commaSep(elements.map(getAssignmentExpr));
+    let content = this.commaSep(elements.map(getAssignmentExpr));
     if (elements.length > 0 && elements[elements.length - 1] == null) {
-      content = seq(content, t(","));
+      content = seq(content, t(","), this.space());
     }
     return bracket(content);
   }
@@ -438,7 +462,7 @@ class CodeGen {
       rightCode = paren(rightCode);
       containsIn = false;
     }
-    return objectAssign(seq(leftCode, t("="), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
+    return objectAssign(seq(leftCode, this.space(), t("="), this.space(), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
   }
 
   reduceCompoundAssignmentExpression(node, {binding, expression}) {
@@ -452,7 +476,7 @@ class CodeGen {
       rightCode = paren(rightCode);
       containsIn = false;
     }
-    return objectAssign(seq(leftCode, t(node.operator), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
+    return objectAssign(seq(leftCode, this.space(), t(node.operator), this.space(), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
   }
 
   reduceBinaryExpression(node, {left, right}) {
@@ -475,7 +499,7 @@ class CodeGen {
       rightContainsIn = false;
     }
     return objectAssign(
-      seq(leftCode, t(node.operator), rightCode),
+      seq(leftCode, this.space(), t(node.operator), this.space(), rightCode),
       {
         containsIn: leftContainsIn || rightContainsIn || node.operator === "in",
         containsGroup: node.operator == ",",
@@ -487,7 +511,7 @@ class CodeGen {
   }
 
   reduceBindingWithDefault(node, {binding, init}) {
-    return seq(binding, t("="), init);
+    return seq(binding, this.space(), t("="), this.space(), init);
   }
 
   reduceBindingIdentifier(node) {
@@ -504,27 +528,27 @@ class CodeGen {
       content = restElement == null ? empty() : seq(t("..."), restElement);
     } else {
       elements = elements.concat(restElement == null ? [] : [seq(t("..."), restElement)]);
-      content = commaSep(elements.map(getAssignmentExpr));
+      content = this.commaSep(elements.map(getAssignmentExpr));
       if (elements.length > 0 && elements[elements.length - 1] == null) {
-        content = seq(content, t(","));
+        content = seq(content, t(","), this.space());
       }
     }
     return bracket(content);
   }
 
   reduceObjectBinding(node, {properties}) {
-    let state = this.brace(commaSep(properties));
+    let state = this.brace(this.commaSep(properties));
     state.startsWithCurly = true;
     return state;
   }
 
   reduceBindingPropertyIdentifier(node, {binding, init}) {
     if (node.init == null) return binding;
-    return seq(binding, t("="), init);
+    return seq(binding, this.space(), t("="), this.space(), init);
   }
 
   reduceBindingPropertyProperty(node, {name, binding}) {
-    return seq(name, t(":"), binding);
+    return seq(name, t(":"), this.space(), binding);
   }
 
   reduceBlock(node, {statements}) {
@@ -541,7 +565,7 @@ class CodeGen {
 
   reduceCallExpression(node, {callee, arguments: args}) {
     return objectAssign(
-      seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(args))),
+      seq(p(node.callee, getPrecedence(node), callee), paren(this.commaSep(args))),
       {
         startsWithCurly: callee.startsWithCurly,
         startsWithLetSquareBracket: callee.startsWithLetSquareBracket,
@@ -551,7 +575,7 @@ class CodeGen {
   }
 
   reduceCatchClause(node, {binding, body}) {
-    return seq(t("catch"), paren(binding), body);
+    return seq(t("catch"), paren(binding), this.space(), body);
   }
 
   reduceClassDeclaration(node, {name, super: _super, elements}) {
@@ -559,7 +583,7 @@ class CodeGen {
     if (_super != null) {
       state = seq(state, t("extends"), _super);
     }
-    state = seq(state, t("{"), ...elements, t("}"));
+    state = seq(state, this.space(), this.brace(seq(...elements)));
     return state;
   }
 
@@ -571,7 +595,7 @@ class CodeGen {
     if (_super != null) {
       state = seq(state, t("extends"), _super);
     }
-    state = seq(state, t("{"), ...elements, t("}"));
+    state = seq(state, this.space(), this.brace(seq(...elements)));
     state.startsWithFunctionOrClass = true;
     return state;
   }
@@ -607,8 +631,8 @@ class CodeGen {
     let startsWithFunctionOrClass = test.startsWithFunctionOrClass;
     return objectAssign(
       seq(
-        p(node.test, Precedence.LogicalOR, test), t("?"),
-        p(node.consequent, Precedence.Assignment, consequent), t(":"),
+        p(node.test, Precedence.LogicalOR, test), this.space(), t("?"), this.space(),
+        p(node.consequent, Precedence.Assignment, consequent), this.space(), t(":"), this.space(),
         p(node.alternate, Precedence.Assignment, alternate)), {
           containsIn,
           startsWithCurly,
@@ -622,7 +646,7 @@ class CodeGen {
   }
 
   reduceDataProperty(node, {name, expression}) {
-    return seq(name, t(":"), getAssignmentExpr(expression));
+    return seq(name, t(":"), this.space(), getAssignmentExpr(expression));
   }
 
   reduceDebuggerStatement(node) {
@@ -630,7 +654,7 @@ class CodeGen {
   }
 
   reduceDoWhileStatement(node, {body, test}) {
-    return seq(t("do"), body, t("while"), paren(test), this.semiOp());
+    return seq(t("do"), this.space(), body, t("while"), this.space(), paren(test), this.semiOp());
   }
 
   reduceEmptyStatement(node) {
@@ -658,23 +682,23 @@ class CodeGen {
         break;
     }
     return objectAssign(
-      seq(t("for"), paren(seq(leftP, t("in"), right)), body),
+      seq(t("for"), this.space(), paren(seq(leftP, t("in"), right)), this.space(), body),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceForOfStatement(node, {left, right, body}) {
     left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
     return objectAssign(
-      seq(t("for"), paren(seq(left.startsWithLet ? paren(left) : left, t("of"), right)), body),
+      seq(t("for"), this.space(), paren(seq(left.startsWithLet ? paren(left) : left, t("of"), right)), this.space(), body),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceForStatement(node, {init, test, update, body}) {
     return objectAssign(
       seq(
-        t("for"),
-        paren(seq(init ? noIn(markContainsIn(init)) : empty(), semi(), test || empty(), semi(), update || empty())),
-        body),
+        t("for"), this.space(),
+        paren(seq(init ? noIn(markContainsIn(init)) : empty(), semi(), test ? seq(this.space(), test) : empty(), semi(), update ? seq(this.space(), update) : empty())),
+        this.space(), body),
         {
           endsWithMissingElse: body.endsWithMissingElse
         });
@@ -688,17 +712,17 @@ class CodeGen {
   }
 
   reduceFunctionDeclaration(node, {name, params, body}) {
-    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, paren(params), this.brace(body));
+    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, paren(params), this.space(), this.brace(body));
   }
 
   reduceFunctionExpression(node, {name, params, body}) {
-    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? name : empty(), paren(params), this.brace(body));
+    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? name : empty(), paren(params), this.space(), this.brace(body));
     state.startsWithFunctionOrClass = true;
     return state;
   }
 
   reduceFormalParameters(node, {items, rest}) {
-    return commaSep(items.concat(rest == null ? [] : [seq(t("..."), rest)]))
+    return this.commaSep(items.concat(rest == null ? [] : [seq(t("..."), rest)]))
   }
 
   reduceArrowExpression(node, {params, body}) {
@@ -710,11 +734,11 @@ class CodeGen {
     } else if (body.startsWithCurly) {
       body = paren(body);
     }
-    return seq(params, t("=>"), body);
+    return seq(params, this.space(), t("=>"), this.space(), body);
   }
 
   reduceGetter(node, {name, body}) {
-    return seq(t("get"), name, paren(empty()), this.brace(body));
+    return seq(t("get"), name, paren(empty()), this.space(), this.brace(body));
   }
 
   reduceIdentifierExpression(node) {
@@ -730,7 +754,7 @@ class CodeGen {
       consequent = this.brace(consequent);
     }
     return objectAssign(
-      seq(t("if"), paren(test), consequent, alternate ? seq(t("else"), alternate) : empty()),
+      seq(t("if"), this.space(), paren(test), this.space(), consequent, alternate ? seq(t("else"), this.space(), alternate) : empty()),
       {endsWithMissingElse: alternate ? alternate.endsWithMissingElse : true});
   }
 
@@ -740,22 +764,22 @@ class CodeGen {
       bindings.push(defaultBinding);
     }
     if (namedImports.length > 0) {
-      bindings.push(this.brace(commaSep(namedImports)));
+      bindings.push(this.brace(this.commaSep(namedImports)));
     }
     if (bindings.length === 0) {
-      return seq(t("import"), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
+      return seq(t("import"), this.space(), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
     }
-    return seq(t("import"), commaSep(bindings), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
+    return seq(t("import"), this.space(), this.commaSep(bindings), this.space(), t("from"), this.space(), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
   }
 
   reduceImportNamespace(node, {defaultBinding, namespaceBinding}) {
     return seq(
-      t("import"),
-      defaultBinding == null ? empty() : seq(defaultBinding, t(",")),
-      t("*"),
-      t("as"),
-      namespaceBinding,
-      t("from"),
+      t("import"), this.space(),
+      defaultBinding == null ? empty() : seq(defaultBinding, t(","), this.space()),
+      t("*"), this.space(),
+      t("as"), this.space(),
+      namespaceBinding, this.space(),
+      t("from"), this.space(),
       t(escapeStringLiteral(node.moduleSpecifier)),
       this.semiOp()
     );
@@ -763,15 +787,15 @@ class CodeGen {
 
   reduceImportSpecifier(node, {binding}) {
     if (node.name == null) return binding;
-    return seq(t(node.name), t("as"), binding);
+    return seq(t(node.name), this.space(), t("as"), this.space(), binding);
   }
 
   reduceExportAllFrom(node) {
-    return seq(t("export"), t("*"), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
+    return seq(t("export"), this.space(), t("*"), this.space(), t("from"), this.space(), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(t("export"), this.brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp()));
+    return seq(t("export"), this.space(), this.brace(this.commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(this.space(), t("from"), this.space(), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp()));
   }
 
   reduceExport(node, {declaration}) {
@@ -782,7 +806,7 @@ class CodeGen {
       default:
         declaration = seq(declaration, this.semiOp());
     }
-    return seq(t("export"), declaration);
+    return seq(t("export"), this.space(), declaration);
   }
 
   reduceExportDefault(node, {body}) {
@@ -794,16 +818,16 @@ class CodeGen {
       default:
         body = seq(body, this.semiOp());
     }
-    return seq(t("export default"), body);
+    return seq(t("export default"), this.space(), body);
   }
 
   reduceExportSpecifier(node) {
     if (node.name == null) return t(node.exportedName);
-    return seq(t(node.name), t("as"), t(node.exportedName));
+    return seq(t(node.name), this.space(), t("as"), this.space(), t(node.exportedName));
   }
 
   reduceLabeledStatement(node, {label, body}) {
-    return objectAssign(seq(t(label + ":"), body), {endsWithMissingElse: body.endsWithMissingElse});
+    return objectAssign(seq(t(label + ":"), this.space(), body), {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceLiteralBooleanExpression(node) {
@@ -831,7 +855,7 @@ class CodeGen {
   }
 
   reduceMethod(node, {name, params, body}) {
-    return seq(node.isGenerator ? t("*") : empty(), name, paren(params), this.brace(body));
+    return seq(node.isGenerator ? t("*") : empty(), name, paren(params), this.space(), this.brace(body));
   }
 
   reduceModule(node, {directives, items}) {
@@ -844,7 +868,7 @@ class CodeGen {
   reduceNewExpression(node, {callee, arguments: args}) {
     let calleeRep = getPrecedence(node.callee) == Precedence.Call ? paren(callee) :
       p(node.callee, getPrecedence(node), callee);
-    return seq(t("new"), calleeRep, args.length === 0 ? empty() : paren(commaSep(args)));
+    return seq(t("new"), this.space(), calleeRep, args.length === 0 ? empty() : paren(this.commaSep(args)));
   }
 
   reduceNewTargetExpression() {
@@ -852,7 +876,7 @@ class CodeGen {
   }
 
   reduceObjectExpression(node, {properties}) {
-    let state = this.brace(commaSep(properties));
+    let state = this.brace(this.commaSep(properties));
     state.startsWithCurly = true;
     return state;
   }
@@ -877,7 +901,7 @@ class CodeGen {
   }
 
   reduceReturnStatement(node, {expression}) {
-    return seq(t("return"), expression || empty(), this.semiOp());
+    return seq(t("return"), expression ? seq(this.space(), expression) : empty(), this.semiOp());
   }
 
   reduceScript(node, {directives, statements}) {
@@ -888,7 +912,7 @@ class CodeGen {
   }
 
   reduceSetter(node, {name, param, body}) {
-    return seq(t("set"), name, paren(param), this.brace(body));
+    return seq(t("set"), this.space(), name, paren(param), this.space(), this.brace(body));
   }
 
   reduceShorthandProperty(node) {
@@ -919,7 +943,7 @@ class CodeGen {
   }
 
   reduceSwitchCase(node, {test, consequent}) {
-    return seq(t("case"), test, t(":"), seq(...consequent));
+    return seq(t("case"), this.space(), test, t(":"), seq(...consequent));
   }
 
   reduceSwitchDefault(node, {consequent}) {
@@ -927,13 +951,13 @@ class CodeGen {
   }
 
   reduceSwitchStatement(node, {discriminant, cases}) {
-    return seq(t("switch"), paren(discriminant), this.brace(seq(...cases)));
+    return seq(t("switch"), paren(discriminant), this.space(), this.brace(seq(...cases)));
   }
 
   reduceSwitchStatementWithDefault(node, {discriminant, preDefaultCases, defaultCase, postDefaultCases}) {
     return seq(
       t("switch"),
-      paren(discriminant),
+      paren(discriminant), this.space(),
       this.brace(seq(...preDefaultCases, defaultCase, ...postDefaultCases)));
   }
 
@@ -974,20 +998,20 @@ class CodeGen {
   }
 
   reduceTryCatchStatement(node, {body, catchClause}) {
-    return seq(t("try"), body, catchClause);
+    return seq(t("try"), this.space(), body, this.space(), catchClause);
   }
 
   reduceTryFinallyStatement(node, {body, catchClause, finalizer}) {
-    return seq(t("try"), body, catchClause || empty(), t("finally"), finalizer);
+    return seq(t("try"), this.space(), body, catchClause ? seq(this.space(), catchClause) : empty(), t("finally"), this.space(), finalizer);
   }
 
   reduceYieldExpression(node, {expression}) {
     if (node.expression == null) return t("yield");
-    return seq(t("yield"), p(node.expression, getPrecedence(node), expression));
+    return seq(t("yield"), this.space(), p(node.expression, getPrecedence(node), expression));
   }
 
   reduceYieldGeneratorExpression(node, {expression}) {
-    return seq(t("yield"), t("*"), p(node.expression, getPrecedence(node), expression));
+    return seq(t("yield"), t("*"), this.space(), p(node.expression, getPrecedence(node), expression));
   }
 
   reduceDirective(node) {
@@ -996,7 +1020,7 @@ class CodeGen {
   }
 
   reduceVariableDeclaration(node, {declarators}) {
-    return seq(t(node.kind), commaSep(declarators));
+    return seq(t(node.kind), this.space(), this.commaSep(declarators));
   }
 
   reduceVariableDeclarationStatement(node, {declaration}) {
@@ -1012,16 +1036,16 @@ class CodeGen {
         init = markContainsIn(init);
       }
     }
-    return objectAssign(new Init(binding, init), {containsIn});
+    return objectAssign(init == null ? binding : seq(binding, this.space(), t("="), this.space(), init), {containsIn});
   }
 
   reduceWhileStatement(node, {test, body}) {
-    return objectAssign(seq(t("while"), paren(test), body), {endsWithMissingElse: body.endsWithMissingElse});
+    return objectAssign(seq(t("while"), this.space(), paren(test), this.space(), body), {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceWithStatement(node, {object, body}) {
     return objectAssign(
-      seq(t("with"), paren(object), body),
+      seq(t("with"), paren(object), this.space(), body),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 }
@@ -1033,9 +1057,17 @@ class FormattedBrace extends CodeRep {
   }
 
   emit(ts) {
-    ts.put("{\n");
-    this.expr.emit(ts, false);
-    ts.put("}");
+    if (isEmpty(this.expr)) {
+      ts.put("{}\n");
+    } else {
+      ts.put("{\n");
+      this.expr.emit(ts, false);
+      ts.put("}\n");
+    }
+  }
+
+  flatten() {
+    return [this].concat(this.children);
   }
 }
 
@@ -1050,15 +1082,43 @@ class FormattedSemiOp extends CodeRep {
   }
 }
 
+class FormattedSpace extends CodeRep {
+  constructor() {
+    super();
+  }
+
+  emit(ts) {
+    ts.put(" ");
+  }
+}
+
 class FormattedCodeGen extends CodeGen {
   brace(rep) {
     return new FormattedBrace(rep);
   }
 
+  commaSep(pieces) {
+    let first = true;
+    pieces = pieces.map(p => {
+      if (first) {
+        first = false;
+        return p;
+      } else {
+        return seq(this.space(), p);
+      }
+    });
+    return new CommaSep(pieces);
+  }
+
   semiOp() {
     return new FormattedSemiOp;
   }
+
+  space() {
+    return new FormattedSpace;
+  }
 }
+
 
 const COMPACT = new CodeGen;
 const PRETTY = new FormattedCodeGen;
