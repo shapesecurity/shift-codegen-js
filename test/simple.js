@@ -822,7 +822,7 @@ describe("Pretty code generator", function () {
   });
 
   it("should output no newline after semi", function () {
-    testPretty("for (;;) {}\n");
+    testPretty("(function () {\n  for (var x = 0;;) {}\n});\n");
   });
 
   it("should indent", function () {
@@ -840,5 +840,9 @@ describe("Pretty code generator", function () {
 
   it("should not output linebreaks after function expressions", function () {
     testPretty("(function () {});\n");
+  });
+
+  it("should indent appropriately within expressions", function () {
+    testPretty("[function () {\n  [function () {\n    let x = a in b;\n  }];\n}];\n")
   });
 });
