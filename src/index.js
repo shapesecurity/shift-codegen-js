@@ -199,8 +199,9 @@ class CodeRep {
     this.endsWithMissingElse = false;
   }
 
-  flatten() {
-    return [this];
+  forEach(f) {
+    // Call a function on every CodeRep represented by this node. Always calls f on a node and then its children, so if you're careful you can modify a node's children online.
+    f(this);
   }
 }
 
@@ -246,8 +247,9 @@ class Paren extends CodeRep {
     ts.put(")");
   }
 
-  flatten() {
-    return [this].concat(this.expr.flatten());
+  forEach(f) {
+    f(this);
+    this.expr.forEach(f);
   }
 }
 
@@ -263,8 +265,9 @@ class Bracket extends CodeRep {
     ts.put("]");
   }
 
-  flatten() {
-    return [this].concat(this.expr.flatten());
+  forEach(f) {
+    f(this);
+    this.expr.forEach(f);
   }
 }
 
@@ -280,8 +283,9 @@ class Brace extends CodeRep {
     ts.put("}");
   }
 
-  flatten() {
-    return [this].concat(this.expr.flatten());
+  forEach(f) {
+    f(this);
+    this.expr.forEach(f);
   }
 }
 
@@ -295,8 +299,9 @@ class NoIn extends CodeRep {
     this.expr.emit(ts, true);
   }
 
-  flatten() {
-    return [this].concat(this.expr.flatten());
+  forEach(f) {
+    f(this);
+    this.expr.forEach(f);
   }
 }
 
@@ -316,8 +321,9 @@ class ContainsIn extends CodeRep {
     }
   }
 
-  flatten() {
-    return [this].concat(this.expr.flatten());
+  forEach(f) {
+    f(this);
+    this.expr.forEach(f);
   }
 }
 
@@ -331,8 +337,9 @@ class Seq extends CodeRep {
     this.children.forEach(cr => cr.emit(ts, noIn));
   }
 
-  flatten() {
-    return [this].concat(...this.children.map(c => c.flatten()));
+  forEach(f) {
+    f(this);
+    this.children.forEach(x => x.forEach(f));
   }
 }
 
@@ -360,8 +367,9 @@ class CommaSep extends CodeRep {
     });
   }
 
-  flatten() {
-    return [this].concat(...this.children.map(c => c.flatten()));
+  forEach(f) {
+    f(this);
+    this.children.forEach(x => x.forEach(f));
   }
 }
 
@@ -1066,8 +1074,9 @@ class FormattedBrace extends CodeRep {
     }
   }
 
-  flatten() {
-    return [this].concat(this.children);
+  forEach(f) {
+    f(this);
+    this.expr.forEach(f);
   }
 }
 
