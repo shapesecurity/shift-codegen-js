@@ -531,7 +531,7 @@ class CodeGen {
       rightContainsIn = false;
     }
     return objectAssign(
-      seq(leftCode, this.space(), t(node.operator), this.space(), rightCode),
+      seq(leftCode, node.operator == "," ? empty() : this.space(), t(node.operator), this.space(), rightCode),
       {
         containsIn: leftContainsIn || rightContainsIn || node.operator === "in",
         containsGroup: node.operator == ",",
@@ -749,7 +749,7 @@ class CodeGen {
   }
 
   reduceFunctionExpression(node, {name, params, body}) {
-    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), name ? name : empty(), paren(params), this.space(), this.brace(body));
+    let state = seq(t("function"), node.isGenerator ? t("*") : empty(), this.space(), name ? name : empty(), paren(params), this.space(), this.brace(body));
     state.startsWithFunctionOrClass = true;
     return state;
   }
@@ -1103,7 +1103,6 @@ class FormattedLinebreak extends Linebreak {
 
 class FormattedCodeGen extends CodeGen {
   brace(rep, initialLinebreak = true) {
-    // todo indent using forEach
     if (isEmpty(rep)) {
       return t("{}");
     }

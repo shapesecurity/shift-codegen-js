@@ -813,15 +813,32 @@ describe("Pretty code generator", function () {
     expect(parse(codeGen(parse(source), true))).eql(parse(source));
   }
 
-  it("should ouput a newline after brace", function () {
+  it("should output a newline after brace", function () {
     testPretty("export default function() {\n  null;\n}\n");
   });
 
-  it("should ouput a newline after semiOp", function () {
+  it("should output a newline after semiOp", function () {
     testPretty("export const FOO = 123;\n");
   });
 
-  it("should ouput no newline after semi", function () {
+  it("should output no newline after semi", function () {
     testPretty("for (;;) {}\n");
+  });
+
+  it("should indent", function () {
+    testPretty("function f() {\n  function g() {\n    null;\n  }\n}\n");
+  });
+
+  it("should insert spaces", function () {
+    testPretty("let [x, , y] = (0 + 1, {a: 2, b: 3}, (c, d) => 4);\n");
+  });
+
+  it("should put else and while inline", function () {
+    testPretty("if (0) {} else {}\n");
+    testPretty("do {} while (true);\n");
+  });
+
+  it("should not output linebreaks after function expressions", function () {
+    testPretty("(function () {});\n");
   });
 });
