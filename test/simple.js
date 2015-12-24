@@ -17,6 +17,7 @@
 var fs = require("fs");
 var expect = require("expect.js");
 var codeGen = require("../")["default"];
+var FormattedCodeGen = require("../")["FormattedCodeGen"];
 var parse = require("shift-parser").parseModule;
 var parseScript = require("shift-parser").parseScript;
 
@@ -809,8 +810,8 @@ describe("Code generator", function () {
 
 describe("Pretty code generator", function () {
   function testPretty(source) {
-    expect(codeGen(parse(source), true)).be(source);
-    expect(parse(codeGen(parse(source), true))).eql(parse(source));
+    expect(codeGen(parse(source), new FormattedCodeGen)).be(source);
+    expect(parse(codeGen(parse(source), new FormattedCodeGen))).eql(parse(source));
   }
 
   it("should output a newline after brace", function () {

@@ -3,9 +3,9 @@ import * as objectAssign from "object-assign";
 import {keyword} from "esutils";
 import {TokenStream} from "./token_stream";
 
-export default function codeGen(script, pretty) {
+export default function codeGen(script, generator = new CodeGen) {
   let ts = new TokenStream;
-  let rep = reduce(pretty ? PRETTY : COMPACT, script);
+  let rep = reduce(generator, script);
   rep.emit(ts);
   return ts.result;
 }
@@ -439,7 +439,7 @@ function withoutTrailingLinebreak(state) {
   return state;
 }
 
-class CodeGen {
+export class CodeGen {
   parenToAvoidBeingDirective(element, original) {
     if (element && element.type === "ExpressionStatement" && element.expression.type === "LiteralStringExpression") {
       return seq(paren(original.children[0]), this.semiOp());
@@ -1101,7 +1101,7 @@ class FormattedLinebreak extends Linebreak {
   }
 }
 
-class FormattedCodeGen extends CodeGen {
+export class FormattedCodeGen extends CodeGen {
   brace(rep, initialLinebreak = true) {
     if (isEmpty(rep)) {
       return t("{}");
@@ -1148,7 +1148,3 @@ class FormattedCodeGen extends CodeGen {
     return new FormattedLinebreak;
   }
 }
-
-
-const COMPACT = new CodeGen;
-const PRETTY = new FormattedCodeGen;
