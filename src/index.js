@@ -383,6 +383,14 @@ class SemiOp extends CodeRep {
   }
 }
 
+class Linebreak extends CodeRep {
+  constructor() {
+    super();
+  }
+
+  emit() {}
+}
+
 function t(token) {
   return new Token(token);
 }
@@ -419,6 +427,18 @@ function getAssignmentExpr(state) {
   return state ? (state.containsGroup ? paren(state) : state) : empty();
 }
 
+function withoutTrailingLinebreak(state) {
+  if (state && state instanceof Seq) {
+    let lastChild = state.children[state.children.length-1];
+    if (lastChild instanceof Linebreak) {
+      state.children.pop();
+    } else if (lastChild instanceof Seq) {
+      withoutTrailingLinebreak(lastChild);
+    }
+  }
+  return state;
+}
+
 class CodeGen {
   parenToAvoidBeingDirective(element, original) {
     if (element && element.type === "ExpressionStatement" && element.expression.type === "LiteralStringExpression") {
@@ -427,8 +447,8 @@ class CodeGen {
     return original;
   }
 
-  brace(rep) {
-    return new Brace(rep)
+  brace(rep, initialLinebreak = true) {
+    return new Brace(initialLinebreak ? seq(this.linebreak(), rep) : rep);
   }
 
   commaSep(pieces) {
@@ -441,6 +461,10 @@ class CodeGen {
 
   space() {
     return empty();
+  }
+
+  linebreak() {
+    return new Linebreak;
   }
 
   reduceArrayExpression(node, {elements}) {
@@ -545,7 +569,7 @@ class CodeGen {
   }
 
   reduceObjectBinding(node, {properties}) {
-    let state = this.brace(this.commaSep(properties));
+    let state = this.brace(this.commaSep(properties), false);
     state.startsWithCurly = true;
     return state;
   }
@@ -564,7 +588,7 @@ class CodeGen {
   }
 
   reduceBlockStatement(node, {block}) {
-    return block;
+    return seq(block, this.linebreak());
   }
 
   reduceBreakStatement(node, {label}) {
@@ -591,7 +615,7 @@ class CodeGen {
     if (_super != null) {
       state = seq(state, t("extends"), _super);
     }
-    state = seq(state, this.space(), this.brace(seq(...elements)));
+    state = seq(state, this.space(), this.brace(seq(...elements)), this.linebreak());
     return state;
   }
 
@@ -609,6 +633,7 @@ class CodeGen {
   }
 
   reduceClassElement(node, {method}) {
+    method = seq(method, this.linebreak());
     if (!node.isStatic) return method;
     return seq(t("static"), method);
   }
@@ -662,11 +687,11 @@ class CodeGen {
   }
 
   reduceDoWhileStatement(node, {body, test}) {
-    return seq(t("do"), this.space(), body, t("while"), this.space(), paren(test), this.semiOp());
+    return seq(t("do"), this.space(), withoutTrailingLinebreak(body), this.space(), t("while"), this.space(), paren(test), this.semiOp());
   }
 
   reduceEmptyStatement(node) {
-    return semi();
+    return seq(semi(), this.linebreak());
   }
 
   reduceExpressionStatement(node, {expression}) {
@@ -720,7 +745,7 @@ class CodeGen {
   }
 
   reduceFunctionDeclaration(node, {name, params, body}) {
-    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, paren(params), this.space(), this.brace(body));
+    return seq(t("function"), node.isGenerator ? t("*") : empty(), node.name.name === "*default*" ? empty() : name, paren(params), this.space(), this.brace(body), this.linebreak());
   }
 
   reduceFunctionExpression(node, {name, params, body}) {
@@ -762,7 +787,10 @@ class CodeGen {
       consequent = this.brace(consequent);
     }
     return objectAssign(
-      seq(t("if"), this.space(), paren(test), this.space(), consequent, alternate ? seq(t("else"), this.space(), alternate) : empty()),
+      seq(t("if"), this.space(),
+        paren(test), this.space(),
+        alternate ? seq(withoutTrailingLinebreak(consequent), this.space()) : consequent,
+        alternate ? seq(t("else"), this.space(), alternate) : empty()),
       {endsWithMissingElse: alternate ? alternate.endsWithMissingElse : true});
   }
 
@@ -772,7 +800,7 @@ class CodeGen {
       bindings.push(defaultBinding);
     }
     if (namedImports.length > 0) {
-      bindings.push(this.brace(this.commaSep(namedImports)));
+      bindings.push(this.brace(this.commaSep(namedImports), false));
     }
     if (bindings.length === 0) {
       return seq(t("import"), this.space(), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp());
@@ -803,7 +831,7 @@ class CodeGen {
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(t("export"), this.space(), this.brace(this.commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(this.space(), t("from"), this.space(), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp()));
+    return seq(t("export"), this.space(), this.brace(this.commaSep(namedExports), false), node.moduleSpecifier == null ? empty() : seq(this.space(), t("from"), this.space(), t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp()));
   }
 
   reduceExport(node, {declaration}) {
@@ -884,7 +912,7 @@ class CodeGen {
   }
 
   reduceObjectExpression(node, {properties}) {
-    let state = this.brace(this.commaSep(properties));
+    let state = this.brace(this.commaSep(properties), false);
     state.startsWithCurly = true;
     return state;
   }
@@ -951,22 +979,22 @@ class CodeGen {
   }
 
   reduceSwitchCase(node, {test, consequent}) {
-    return seq(t("case"), this.space(), test, t(":"), seq(...consequent));
+    return seq(t("case"), this.space(), test, t(":"), this.linebreak(), seq(...consequent));
   }
 
   reduceSwitchDefault(node, {consequent}) {
-    return seq(t("default:"), seq(...consequent));
+    return seq(t("default:"), this.linebreak(), seq(...consequent));
   }
 
   reduceSwitchStatement(node, {discriminant, cases}) {
-    return seq(t("switch"), paren(discriminant), this.space(), this.brace(seq(...cases)));
+    return seq(t("switch"), paren(discriminant), this.space(), this.brace(seq(...cases)), this.linebreak());
   }
 
   reduceSwitchStatementWithDefault(node, {discriminant, preDefaultCases, defaultCase, postDefaultCases}) {
     return seq(
       t("switch"),
       paren(discriminant), this.space(),
-      this.brace(seq(...preDefaultCases, defaultCase, ...postDefaultCases)));
+      this.brace(seq(...preDefaultCases, defaultCase, ...postDefaultCases)), this.linebreak());
   }
 
   reduceTemplateExpression(node, {tag, elements}) {
@@ -1006,11 +1034,11 @@ class CodeGen {
   }
 
   reduceTryCatchStatement(node, {body, catchClause}) {
-    return seq(t("try"), this.space(), body, this.space(), catchClause);
+    return seq(t("try"), this.space(), body, this.space(), catchClause, this.linebreak());
   }
 
   reduceTryFinallyStatement(node, {body, catchClause, finalizer}) {
-    return seq(t("try"), this.space(), body, catchClause ? seq(this.space(), catchClause) : empty(), t("finally"), this.space(), finalizer);
+    return seq(t("try"), this.space(), body, catchClause ? seq(this.space(), catchClause) : empty(), t("finally"), this.space(), finalizer, this.linebreak());
   }
 
   reduceYieldExpression(node, {expression}) {
@@ -1058,52 +1086,42 @@ class CodeGen {
   }
 }
 
-class FormattedBrace extends CodeRep {
-  constructor(expr) {
-    super();
-    this.expr = expr;
-  }
-
-  emit(ts) {
-    if (isEmpty(this.expr)) {
-      ts.put("{}\n");
-    } else {
-      ts.put("{\n");
-      this.expr.emit(ts, false);
-      ts.put("}\n");
-    }
-  }
-
-  forEach(f) {
-    f(this);
-    this.expr.forEach(f);
-  }
-}
-
-class FormattedSemiOp extends CodeRep {
+const INDENT = "  ";
+class FormattedLinebreak extends Linebreak {
   constructor() {
     super();
+    this.indentation = 0;
   }
 
   emit(ts) {
-    ts.putOptionalSemi();
     ts.put("\n");
-  }
-}
-
-class FormattedSpace extends CodeRep {
-  constructor() {
-    super();
-  }
-
-  emit(ts) {
-    ts.put(" ");
+    for (let i = 0; i < this.indentation; ++i) {
+      ts.put(INDENT);
+    }
   }
 }
 
 class FormattedCodeGen extends CodeGen {
-  brace(rep) {
-    return new FormattedBrace(rep);
+  brace(rep, initialLinebreak = true) {
+    // todo indent using forEach
+    if (isEmpty(rep)) {
+      return t("{}");
+    }
+    if (!initialLinebreak) {
+      return new Brace(rep);
+    }
+
+    rep = seq(this.linebreak(), rep);
+    let finalLinebreak;
+    function indent(node) {
+      if (node instanceof FormattedLinebreak) {
+        finalLinebreak = node;
+        ++node.indentation;
+      }
+    }
+    rep.forEach(indent);
+    --finalLinebreak.indentation;
+    return new Brace(rep);
   }
 
   commaSep(pieces) {
@@ -1120,11 +1138,15 @@ class FormattedCodeGen extends CodeGen {
   }
 
   semiOp() {
-    return new FormattedSemiOp;
+    return seq(new SemiOp, this.linebreak());
   }
 
   space() {
-    return new FormattedSpace;
+    return t(" ");
+  }
+
+  linebreak() {
+    return new FormattedLinebreak;
   }
 }
 

@@ -814,7 +814,7 @@ describe("Pretty code generator", function () {
   }
 
   it("should ouput a newline after brace", function () {
-    testPretty("export default function() {\nnull;\n}\n");
+    testPretty("export default function() {\n  null;\n}\n");
   });
 
   it("should ouput a newline after semiOp", function () {
