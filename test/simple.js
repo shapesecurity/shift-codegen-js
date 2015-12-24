@@ -17,6 +17,9 @@
 var fs = require("fs");
 var expect = require("expect.js");
 var codeGen = require("../")["default"];
+var MinimalCodeGen = require("../")["MinimalCodeGen"];
+var FormattedCodeGen = require("../")["FormattedCodeGen"];
+var ExtensibleCodeGen = require("../")["ExtensibleCodeGen"];
 var parse = require("shift-parser").parseModule;
 var parseScript = require("shift-parser").parseScript;
 
@@ -62,6 +65,7 @@ describe("Code generator", function () {
         throw new Error('Not supported');
       }
       expect(codeGen(tree)).eql(to);
+      expect(codeGen(tree, new ExtensibleCodeGen)).eql(to);
     }
 
     function test(source) {
@@ -69,7 +73,9 @@ describe("Code generator", function () {
         throw new Error('Not supported');
       }
       expect(codeGen(parse(source))).be(source);
+      expect(codeGen(parse(source), new ExtensibleCodeGen)).be(source);
       expect(parse(codeGen(parse(source)))).eql(parse(source));
+      expect(parse(codeGen(parse(source), new FormattedCodeGen))).eql(parse(source));
     }
 
     function testScript(source) {
@@ -77,7 +83,9 @@ describe("Code generator", function () {
         throw new Error('Not supported');
       }
       expect(codeGen(parseScript(source))).be(source);
+      expect(codeGen(parseScript(source), new ExtensibleCodeGen)).be(source);
       expect(parseScript(codeGen(parseScript(source)))).eql(parseScript(source));
+      expect(parseScript(codeGen(parseScript(source), new FormattedCodeGen))).eql(parseScript(source));
     }
 
     function test2(expected, source) {
@@ -85,7 +93,9 @@ describe("Code generator", function () {
         throw new Error('Not supported');
       }
       expect(codeGen(parse(source))).be(expected);
+      expect(codeGen(parse(source), new ExtensibleCodeGen)).be(expected);
       expect(codeGen(parse(expected))).be(expected);
+      expect(codeGen(parse(expected), new ExtensibleCodeGen)).be(expected);
     }
 
     function test2Script(expected, source) {
@@ -441,6 +451,7 @@ describe("Code generator", function () {
       test("a=>{0;return}");
       test("()=>function(){}");
       test("()=>class{}");
+      test("()=>(1,2)");
     });
 
     it("NewTargetExpression", function () {
@@ -808,20 +819,83 @@ describe("Code generator", function () {
 });
 
 describe("Pretty code generator", function () {
-  function testPretty(source) {
-    expect(codeGen(parse(source), true)).be(source);
-    expect(parse(codeGen(parse(source), true))).eql(parse(source));
+  function testPretty(source, scriptMode) {
+    var parseTest = scriptMode ? parseScript : parse;
+    expect(codeGen(parseTest(source), new FormattedCodeGen)).be(source);
+    expect(parseTest(codeGen(parseTest(source), new FormattedCodeGen))).eql(parseTest(source));
   }
 
-  it("should ouput a newline after brace", function () {
-    testPretty("export default function(){\n}");
+  function testLoose(to, tree) {
+    if (arguments.length !== 2) {
+      throw new Error('Not supported');
+    }
+    expect(codeGen(tree, new FormattedCodeGen)).eql(to);
+  }
+
+  it("should output a newline after brace", function () {
+    testPretty("export default function () {\n  null;\n}\n");
   });
 
-  it("should ouput a newline after semiOp", function () {
-    testPretty("export const FOO=123;\n");
+  it("should output a newline after semiOp", function () {
+    testPretty("export const FOO = 123;\n");
   });
 
-  it("should ouput no newline after semi", function () {
-    testPretty("for(;;){\n}");
+  it("should output no newline after semi", function () {
+    testPretty("(function () {\n  for (var x = 0;;) {}\n});\n");
   });
+
+  it("should indent", function () {
+    testPretty("function f() {\n  function g() {\n    null;\n    l: for (;;) {\n      break l;\n    }\n  }\n}\n");
+  });
+
+  it("should insert spaces in expressions", function () {
+    testPretty("let [x, , y] = (0 + 1, {a: 2, b: 3}, (c, d) => (4, 5));\n");
+  });
+
+  it("should insert spaces in statements", function () {
+    testPretty("with ({}) {}\n", true);
+  });
+
+  it("should put else and while inline", function () {
+    testPretty("if (0) {} else {}\n");
+    testPretty("do {} while (true);\n");
+  });
+
+  it("should not output linebreaks after function expressions", function () {
+    testPretty("(function () {});\n");
+  });
+
+  it("should indent appropriately within expressions", function () {
+    testPretty("[function () {\n  [function () {\n    let x = a in b;\n  }];\n}];\n");
+  });
+
+  it("should add spaces to the appropriate unary operations", function () {
+    testPretty("++x;\n--x;\n+[];\n-[];\n+[];\n![];\n~[];\nvoid [];\ntypeof [];\ndelete [];\n");
+  });
+
+  it("should pretty-print switch statements", function () {
+    testPretty("switch (0) {\n  case 0:\n  case 1:\n    0;\n  default:\n    0;\n    0;\n  case 3:\n    0;\n    0;\n  case 4:\n}\n");
+  });
+
+  it("should handle literal string expressions and directives properly", function () {
+    testPretty("'\"';\n(\"expression\");\n");
+  });
+
+  it("should continue handling missing-else condition appropriately", function () {
+    function statement(stmt) {
+      return { type: "Script", directives: [], statements: [stmt] };
+    }
+
+    var IDENT = { type: "IdentifierExpression", name: "a" };
+    var EMPTY = { type: "EmptyStatement" };
+
+    var MISSING_ELSE = { type: "IfStatement", test: IDENT, consequent: EMPTY, alternate: null };
+    testLoose("if (a) {\n  if (a) ;\n} else ;\n",
+      statement({ type: "IfStatement", test: IDENT, consequent: MISSING_ELSE, alternate: EMPTY })
+    );
+  });
+
+  it("should print the empty script as the empty script", function () {
+    testPretty("", true);
+  })
 });
