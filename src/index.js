@@ -9,5 +9,5 @@ export default function codeGen(script, generator = new MinimalCodeGen) {
   return ts.result;
 }
 
-export {MinimalCodeGen} from "./minimal-codegen";
-export {ExtensibleCodeGen, FormattedCodeGen} from "./formatted-codegen";
+export {default as MinimalCodeGen} from "./minimal-codegen";
+export {ExtensibleCodeGen, FormattedCodeGen, Sep} from "./formatted-codegen";

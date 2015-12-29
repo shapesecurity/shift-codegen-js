@@ -18,18 +18,25 @@ function seq(...reps) {
   return new Seq(reps);
 }
 
+function isEmpty(codeRep) {
+  return codeRep instanceof Empty || codeRep instanceof Linebreak || (codeRep instanceof Seq && codeRep.children.every(isEmpty));
+}
+
 let Sep = {};
 const separatorNames = [
   "ARRAY_EMPTY",
+  "ARRAY_BEFORE_COMMA",
   "ARRAY_AFTER_COMMA",
   "SPREAD",
   "BEFORE_DEFAULT_EQUALS",
   "AFTER_DEFAULT_EQUALS",
   "REST",
+  "OBJECT_BEFORE_COMMA",
   "OBJECT_AFTER_COMMA",
   "BEFORE_PROP",
   "AFTER_PROP",
   "BEFORE_JUMP_LABEL",
+  "ARGS_BEFORE_COMMA",
   "ARGS_AFTER_COMMA",
   "CALL",
   "BEFORE_CATCH_BINDING",
@@ -46,6 +53,7 @@ const separatorNames = [
   "AFTER_TERNARY_QUESTION",
   "BEFORE_TERNARY_COLON",
   "AFTER_TERNARY_COLON",
+  "COMPUTED_MEMBER_EXPRESSION",
   "AFTER_DO",
   "BEFORE_DOWHILE_WHILE",
   "AFTER_DOWHILE_WHILE",
@@ -73,6 +81,7 @@ const separatorNames = [
   "BEFORE_FUNCTION_PARAMS",
   "BEFORE_FUNCTION_DECLARATION_BODY",
   "BEFORE_FUNCTION_EXPRESSION_BODY",
+  "AFTER_FUNCTION_DIRECTIVES",
   "BEFORE_ARROW",
   "AFTER_ARROW",
   "AFTER_GET",
@@ -82,8 +91,11 @@ const separatorNames = [
   "AFTER_IF_TEST",
   "BEFORE_ELSE",
   "AFTER_ELSE",
+  "PARAMETER_BEFORE_COMMA",
   "PARAMETER_AFTER_COMMA",
+  "NAMED_IMPORT_BEFORE_COMMA",
   "NAMED_IMPORT_AFTER_COMMA",
+  "IMPORT_BEFORE_COMMA",
   "IMPORT_AFTER_COMMA",
   "BEFORE_IMPORT_BINDINGS",
   "BEFORE_IMPORT_MODULE",
@@ -96,12 +108,14 @@ const separatorNames = [
   "AFTER_NAMESPACE_BINDING",
   "BEFORE_IMPORT_AS",
   "AFTER_IMPORT_AS",
+  "EXPORTS_BEFORE_COMMA",
   "EXPORTS_AFTER_COMMA",
   "BEFORE_EXPORT_STAR",
   "AFTER_EXPORT_STAR",
   "BEFORE_EXPORT_BINDINGS",
   "AFTER_EXPORT_BINDINGS",
   "AFTER_EXPORT",
+  "EXPORT_DEFAULT",
   "AFTER_EXPORT_DEFAULT",
   "BEFORE_EXPORT_AS",
   "AFTER_EXPORT_AS",
@@ -110,13 +124,19 @@ const separatorNames = [
   "AFTER_METHOD_GENERATOR_STAR",
   "AFTER_METHOD_NAME",
   "BEFORE_METHOD_BODY",
+  "AFTER_MODULE_DIRECTIVES",
   "AFTER_NEW",
   "BEFORE_NEW_ARGS",
   "EMPTY_NEW_CALL",
+  "NEW_TARGET_BEFORE_DOT",
+  "NEW_TARGET_AFTER_DOT",
   "RETURN",
   "AFTER_SET",
   "BEFORE_SET_PARAMS",
   "BEFORE_SET_BODY",
+  "AFTER_SCRIPT_DIRECTIVES",
+  "BEFORE_STATIC_MEMBER_DOT",
+  "AFTER_STATIC_MEMBER_DOT",
   "BEFORE_CASE_TEST",
   "AFTER_CASE_TEST",
   "BEFORE_CASE_BODY",
@@ -125,6 +145,9 @@ const separatorNames = [
   "AFTER_DEFAULT_BODY",
   "BEFORE_SWITCH_DISCRIM",
   "BEFORE_SWITCH_BODY",
+  "TEMPLATE_TAG",
+  "BEFORE_TEMPLATE_EXPRESSION",
+  "AFTER_TEMPLATE_EXPRESSION",
   "THROW",
   "AFTER_TRY",
   "BEFORE_CATCH",
@@ -134,6 +157,7 @@ const separatorNames = [
   "YIELD",
   "BEFORE_YIELD_STAR",
   "AFTER_YIELD_STAR",
+  "DECLARATORS_BEFORE_COMMA",
   "DECLARATORS_AFTER_COMMA",
   "BEFORE_INIT_EQUALS",
   "AFTER_INIT_EQUALS",
@@ -141,6 +165,57 @@ const separatorNames = [
   "BEFORE_WHILE_BODY",
   "AFTER_WITH",
   "BEFORE_WITH_BODY",
+  "PAREN_AVOIDING_DIRECTIVE_BEFORE",
+  "PAREN_AVOIDING_DIRECTIVE_AFTER",
+  "PRECEDENCE_BEFORE",
+  "PRECEDENCE_AFTER",
+  "EXPRESSION_PAREN_BEFORE",
+  "EXPRESSION_PAREN_AFTER",
+  "CALL_PAREN_BEFORE",
+  "CALL_PAREN_AFTER",
+  "CALL_PAREN_EMPTY",
+  "CATCH_PAREN_BEFORE",
+  "CATCH_PAREN_AFTER",
+  "DO_WHILE_TEST_PAREN_BEFORE",
+  "DO_WHILE_TEST_PAREN_AFTER",
+  "EXPRESSION_STATEMENT_PAREN_BEFORE",
+  "EXPRESSION_STATEMENT_PAREN_AFTER",
+  "FOR_IN_LET_PAREN_BEFORE",
+  "FOR_IN_LET_PAREN_AFTER",
+  "FOR_IN_PAREN_BEFORE",
+  "FOR_IN_PAREN_AFTER",
+  "FOR_OF_LET_PAREN_BEFORE",
+  "FOR_OF_LET_PAREN_AFTER",
+  "FOR_OF_PAREN_BEFORE",
+  "FOR_OF_PAREN_AFTER",
+  "FOR_PAREN_BEFORE",
+  "FOR_PAREN_AFTER",
+  "PARAMETERS_PAREN_BEFORE",
+  "PARAMETERS_PAREN_AFTER",
+  "PARAMETERS_PAREN_EMPTY",
+  "ARROW_PARAMETERS_PAREN_BEFORE",
+  "ARROW_PARAMETERS_PAREN_AFTER",
+  "ARROW_PARAMETERS_PAREN_EMPTY",
+  "ARROW_BODY_PAREN_BEFORE",
+  "ARROW_BODY_PAREN_AFTER",
+  "GETTER_PARAMS",
+  "IF_PAREN_BEFORE",
+  "IF_PAREN_AFTER",
+  "EXPORT_PAREN_BEFORE",
+  "EXPORT_PAREN_AFTER",
+  "NEW_CALLEE_PAREN_BEFORE",
+  "NEW_CALLEE_PAREN_AFTER",
+  "NEW_PAREN_BEFORE",
+  "NEW_PAREN_AFTER",
+  "NEW_PAREN_EMPTY",
+  "SETTER_PARAM_BEFORE",
+  "SETTER_PARAM_AFTER",
+  "SWITCH_DISCRIM_PAREN_BEFORE",
+  "SWITCH_DISCRIM_PAREN_AFTER",
+  "WHILE_TEST_PAREN_BEFORE",
+  "WHILE_TEST_PAREN_AFTER",
+  "WITH_PAREN_BEFORE",
+  "WITH_PAREN_AFTER",
 ];
 for (let i = 0; i < separatorNames.length; ++i) {
   Sep[separatorNames[i]] = {type: separatorNames[i]};
@@ -206,7 +281,7 @@ export {Sep};
 export class ExtensibleCodeGen {
   parenToAvoidBeingDirective(element, original) {
     if (element && element.type === "ExpressionStatement" && element.expression.type === "LiteralStringExpression") {
-      return seq(this.paren(original.children[0]), this.semiOp());
+      return seq(this.paren(original.children[0], Sep.PAREN_AVOIDING_DIRECTIVE_BEFORE, Sep.PAREN_AVOIDING_DIRECTIVE_AFTER), this.semiOp());
     }
     return original;
   }
@@ -216,18 +291,21 @@ export class ExtensibleCodeGen {
   }
 
   p(node, precedence, a) {
-    return getPrecedence(node) < precedence ? this.paren(a) : a;
+    return getPrecedence(node) < precedence ? this.paren(a, Sep.PRECEDENCE_BEFORE, Sep.PRECEDENCE_AFTER) : a;
   }
 
   getAssignmentExpr(state) {
-    return state ? (state.containsGroup ? this.paren(state) : state) : empty();
+    return state ? (state.containsGroup ? this.paren(state, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER) : state) : empty();
   }
 
-  paren(rep) {
-    return new Paren(rep);
+  paren(rep, first, last, empty) {
+    if (isEmpty(rep)) {
+      return new Paren(this.sep(empty));
+    }
+    return new Paren(seq(this.sep(first), rep, this.sep(last)));
   }
 
-  brace(rep, node) {
+  brace(rep) {
     return new Brace(rep);
   }
 
@@ -235,17 +313,17 @@ export class ExtensibleCodeGen {
     return new Bracket(rep);
   }
 
-  commaSep(pieces, separator) {
+  commaSep(pieces, before, after) {
     let first = true;
     pieces = pieces.map(p => {
       if (first) {
         first = false;
         return p;
       } else {
-        return seq(this.sep(separator), p);
+        return seq(this.sep(before), this.t(","), this.sep(after), p);
       }
     });
-    return new CommaSep(pieces);
+    return seq(...pieces);
   }
 
   semiOp() {
@@ -261,9 +339,9 @@ export class ExtensibleCodeGen {
       return this.bracket(this.sep(Sep.ARRAY_EMPTY));
     }
 
-    let content = this.commaSep(elements.map(e=>this.getAssignmentExpr(e)), Sep.ARRAY_AFTER_COMMA);
+    let content = this.commaSep(elements.map(e=>this.getAssignmentExpr(e)), Sep.ARRAY_BEFORE_COMMA, Sep.ARRAY_AFTER_COMMA);
     if (elements.length > 0 && elements[elements.length - 1] == null) {
-      content = seq(content, this.t(","), this.sep(Sep.ARRAY_AFTER_COMMA));
+      content = seq(content, this.sep(Sep.ARRAY_BEFORE_COMMA), this.t(","), this.sep(Sep.ARRAY_AFTER_COMMA));
     }
     return this.bracket(content);
   }
@@ -280,7 +358,7 @@ export class ExtensibleCodeGen {
     let startsWithLetSquareBracket = binding.startsWithLetSquareBracket;
     let startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
     if (getPrecedence(node.expression) < getPrecedence(node)) {
-      rightCode = this.paren(rightCode);
+      rightCode = this.paren(rightCode, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER);
       containsIn = false;
     }
     return objectAssign(seq(leftCode, this.sep(Sep.BEFORE_ASSIGN_OP("=")), this.t("="), this.sep(Sep.AFTER_ASSIGN_OP("=")), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
@@ -294,7 +372,7 @@ export class ExtensibleCodeGen {
     let startsWithLetSquareBracket = binding.startsWithLetSquareBracket;
     let startsWithFunctionOrClass = binding.startsWithFunctionOrClass;
     if (getPrecedence(node.expression) < getPrecedence(node)) {
-      rightCode = this.paren(rightCode);
+      rightCode = this.paren(rightCode, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER);
       containsIn = false;
     }
     return objectAssign(seq(leftCode, this.sep(Sep.BEFORE_ASSIGN_OP(node.operator)), this.t(node.operator), this.sep(Sep.AFTER_ASSIGN_OP(node.operator)), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
@@ -307,7 +385,7 @@ export class ExtensibleCodeGen {
     let startsWithFunctionOrClass = left.startsWithFunctionOrClass;
     let leftContainsIn = left.containsIn;
     if (getPrecedence(node.left) < getPrecedence(node)) {
-      leftCode = this.paren(leftCode);
+      leftCode = this.paren(leftCode, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER);
       startsWithCurly = false;
       startsWithLetSquareBracket = false;
       startsWithFunctionOrClass = false;
@@ -316,7 +394,7 @@ export class ExtensibleCodeGen {
     let rightCode = right;
     let rightContainsIn = right.containsIn;
     if (getPrecedence(node.right) <= getPrecedence(node)) {
-      rightCode = this.paren(rightCode);
+      rightCode = this.paren(rightCode, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER);
       rightContainsIn = false;
     }
     return objectAssign(
@@ -349,16 +427,16 @@ export class ExtensibleCodeGen {
       content = restElement == null ? empty() : seq(this.t("..."), this.sep(Sep.REST), restElement);
     } else {
       elements = elements.concat(restElement == null ? [] : [seq(this.t("..."), this.sep(Sep.REST), restElement)]);
-      content = this.commaSep(elements.map(e=>this.getAssignmentExpr(e)), Sep.ARRAY_AFTER_COMMA);
+      content = this.commaSep(elements.map(e=>this.getAssignmentExpr(e)), Sep.ARRAY_BEFORE_COMMA, Sep.ARRAY_AFTER_COMMA);
       if (elements.length > 0 && elements[elements.length - 1] == null) {
-        content = seq(content, this.t(","), this.sep(Sep.ARRAY_AFTER_COMMA));
+        content = seq(content, this.sep(Sep.ARRAY_BEFORE_COMMA), this.t(","), this.sep(Sep.ARRAY_AFTER_COMMA));
       }
     }
     return this.bracket(content);
   }
 
   reduceObjectBinding(node, {properties}) {
-    let state = this.brace(this.commaSep(properties, Sep.OBJECT_AFTER_COMMA), node);
+    let state = this.brace(this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA), node);
     state.startsWithCurly = true;
     return state;
   }
@@ -386,7 +464,7 @@ export class ExtensibleCodeGen {
 
   reduceCallExpression(node, {callee, arguments: args}) {
     return objectAssign(
-      seq(this.p(node.callee, getPrecedence(node), callee), this.sep(Sep.CALL), this.paren(this.commaSep(args, Sep.ARGS_AFTER_COMMA))),
+      seq(this.p(node.callee, getPrecedence(node), callee), this.sep(Sep.CALL), this.paren(this.commaSep(args, Sep.ARGS_BEFORE_COMMA, Sep.ARGS_AFTER_COMMA), Sep.CALL_PAREN_BEFORE, Sep.CALL_PAREN_AFTER, Sep.CALL_PAREN_EMPTY)),
       {
         startsWithCurly: callee.startsWithCurly,
         startsWithLetSquareBracket: callee.startsWithLetSquareBracket,
@@ -396,7 +474,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceCatchClause(node, {binding, body}) {
-    return seq(this.t("catch"), this.sep(Sep.BEFORE_CATCH_BINDING), this.paren(binding), this.sep(Sep.AFTER_CATCH_BINDING), body);
+    return seq(this.t("catch"), this.sep(Sep.BEFORE_CATCH_BINDING), this.paren(binding, Sep.CATCH_PAREN_BEFORE, Sep.CATCH_PAREN_AFTER), this.sep(Sep.AFTER_CATCH_BINDING), body);
   }
 
   reduceClassDeclaration(node, {name, super: _super, elements}) {
@@ -432,7 +510,7 @@ export class ExtensibleCodeGen {
       object.startsWithLetSquareBracket ||
       node.object.type === "IdentifierExpression" && node.object.name === "let";
     return objectAssign(
-      seq(this.p(node.object, getPrecedence(node), object), this.bracket(expression)),
+      seq(this.p(node.object, getPrecedence(node), object), this.sep(Sep.COMPUTED_MEMBER_EXPRESSION), this.bracket(expression)),
       {
         startsWithLet: object.startsWithLet,
         startsWithLetSquareBracket,
@@ -476,7 +554,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceDoWhileStatement(node, {body, test}) {
-    return seq(this.t("do"), this.sep(Sep.AFTER_DO), body, this.sep(Sep.BEFORE_DOWHILE_WHILE), this.t("while"), this.sep(Sep.AFTER_DOWHILE_WHILE), this.paren(test), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(this.t("do"), this.sep(Sep.AFTER_DO), body, this.sep(Sep.BEFORE_DOWHILE_WHILE), this.t("while"), this.sep(Sep.AFTER_DOWHILE_WHILE), this.paren(test, Sep.DO_WHILE_TEST_PAREN_BEFORE, Sep.DO_WHILE_TEST_PAREN_AFTER), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceEmptyStatement(node) {
@@ -488,7 +566,7 @@ export class ExtensibleCodeGen {
       expression.startsWithCurly ||
       expression.startsWithLetSquareBracket ||
       expression.startsWithFunctionOrClass;
-    return seq((needsParens ? this.paren(expression) : expression), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq((needsParens ? this.paren(expression, Sep.EXPRESSION_STATEMENT_PAREN_BEFORE, Sep.EXPRESSION_STATEMENT_PAREN_AFTER) : expression), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceForInStatement(node, {left, right, body}) {
@@ -499,19 +577,19 @@ export class ExtensibleCodeGen {
         break;
       case "BindingIdentifier":
         if (node.left.name === "let") {
-          leftP = this.paren(left);
+          leftP = this.paren(left, Sep.FOR_IN_LET_PAREN_BEFORE, Sep.FOR_IN_LET_PAREN_BEFORE);
         }
         break;
     }
     return objectAssign(
-      seq(this.t("for"), this.sep(Sep.AFTER_FORIN_FOR), this.paren(seq(leftP, this.sep(Sep.BEFORE_FORIN_IN), this.t("in"), this.sep(Sep.AFTER_FORIN_FOR), right)), this.sep(Sep.BEFORE_FORIN_BODY), body),
+      seq(this.t("for"), this.sep(Sep.AFTER_FORIN_FOR), this.paren(seq(leftP, this.sep(Sep.BEFORE_FORIN_IN), this.t("in"), this.sep(Sep.AFTER_FORIN_FOR), right), Sep.FOR_IN_PAREN_BEFORE, Sep.FOR_IN_PAREN_AFTER), this.sep(Sep.BEFORE_FORIN_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceForOfStatement(node, {left, right, body}) {
     left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
     return objectAssign(
-      seq(this.t("for"), this.sep(Sep.AFTER_FOROF_FOR), this.paren(seq(left.startsWithLet ? this.paren(left) : left, this.sep(Sep.BEFORE_FOROF_OF), this.t("of"), this.sep(Sep.AFTER_FOROF_FOR), right)), this.sep(Sep.BEFORE_FOROF_BODY), body),
+      seq(this.t("for"), this.sep(Sep.AFTER_FOROF_FOR), this.paren(seq(left.startsWithLet ? this.paren(left, Sep.FOR_OF_LET_PAREN_BEFORE, Sep.FOR_OF_LET_PAREN_AFTER) : left, this.sep(Sep.BEFORE_FOROF_OF), this.t("of"), this.sep(Sep.AFTER_FOROF_FOR), right), Sep.FOR_OF_PAREN_BEFORE, Sep.FOR_OF_PAREN_AFTER), this.sep(Sep.BEFORE_FOROF_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
@@ -519,8 +597,8 @@ export class ExtensibleCodeGen {
     return objectAssign(
       seq(
         this.t("for"), this.sep(Sep.AFTER_FOR_FOR),
-        this.paren(seq(this.sep(Sep.BEFORE_FOR_INIT), seq(init ? seq(this.sep(Sep.BEFORE_FOR_INIT), noIn(markContainsIn(init)), this.sep(Sep.AFTER_FOR_INIT)) : this.sep(Sep.EMPTY_FOR_INIT), this.t(";"), test ? seq(this.sep(Sep.BEFORE_FOR_TEST), test, this.sep(Sep.AFTER_FOR_TEST)) : this.sep(Sep.EMPTY_FOR_TEST), this.t(";"), update ? seq(this.sep(Sep.BEFORE_FOR_UPDATE), update, this.sep(Sep.AFTER_FOR_UPDATE)) : this.sep(Sep.EMPTY_FOR_UPDATE)))),
-        this.sep(Sep.BEFORE_FOR_BODY), body),
+        this.paren(seq(this.sep(Sep.BEFORE_FOR_INIT), seq(init ? seq(this.sep(Sep.BEFORE_FOR_INIT), noIn(markContainsIn(init)), this.sep(Sep.AFTER_FOR_INIT)) : this.sep(Sep.EMPTY_FOR_INIT), this.t(";"), test ? seq(this.sep(Sep.BEFORE_FOR_TEST), test, this.sep(Sep.AFTER_FOR_TEST)) : this.sep(Sep.EMPTY_FOR_TEST), this.t(";"), update ? seq(this.sep(Sep.BEFORE_FOR_UPDATE), update, this.sep(Sep.AFTER_FOR_UPDATE)) : this.sep(Sep.EMPTY_FOR_UPDATE))), Sep.FOR_PAREN_BEFORE, Sep.FOR_PAREN_AFTER),
+        this.sep(Sep.BEFORE_FOR_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
         {
           endsWithMissingElse: body.endsWithMissingElse
         });
@@ -530,37 +608,37 @@ export class ExtensibleCodeGen {
     if (statements.length) {
       statements[0] = this.parenToAvoidBeingDirective(node.statements[0], statements[0]);
     }
-    return seq(...directives, ...statements);
+    return seq(...directives, directives.length ? this.sep(Sep.AFTER_FUNCTION_DIRECTIVES) : empty(), ...statements);
   }
 
   reduceFunctionDeclaration(node, {name, params, body}) {
-    return seq(this.t("function"), node.isGenerator ? seq(this.sep(Sep.BEFORE_GENERATOR_STAR), this.t("*"), this.sep(Sep.AFTER_GENERATOR_STAR)) : empty(), this.sep(Sep.BEFORE_FUNCTION_NAME(node)), node.name.name === "*default*" ? empty() : name, this.sep(Sep.BEFORE_FUNCTION_PARAMS), this.paren(params), this.sep(Sep.BEFORE_FUNCTION_DECLARATION_BODY), this.brace(body, node), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(this.t("function"), node.isGenerator ? seq(this.sep(Sep.BEFORE_GENERATOR_STAR), this.t("*"), this.sep(Sep.AFTER_GENERATOR_STAR)) : empty(), this.sep(Sep.BEFORE_FUNCTION_NAME(node)), node.name.name === "*default*" ? empty() : name, this.sep(Sep.BEFORE_FUNCTION_PARAMS), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_FUNCTION_DECLARATION_BODY), this.brace(body, node), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceFunctionExpression(node, {name, params, body}) {
-    let state = seq(this.t("function"), node.isGenerator ? seq(this.sep(Sep.BEFORE_GENERATOR_STAR), this.t("*"), this.sep(Sep.AFTER_GENERATOR_STAR)) : empty(), this.sep(Sep.BEFORE_FUNCTION_NAME(node)), name ? name : empty(), this.sep(Sep.BEFORE_FUNCTION_PARAMS), this.paren(params), this.sep(Sep.BEFORE_FUNCTION_EXPRESSION_BODY), this.brace(body, node));
+    let state = seq(this.t("function"), node.isGenerator ? seq(this.sep(Sep.BEFORE_GENERATOR_STAR), this.t("*"), this.sep(Sep.AFTER_GENERATOR_STAR)) : empty(), this.sep(Sep.BEFORE_FUNCTION_NAME(node)), name ? name : empty(), this.sep(Sep.BEFORE_FUNCTION_PARAMS), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_FUNCTION_EXPRESSION_BODY), this.brace(body, node));
     state.startsWithFunctionOrClass = true;
     return state;
   }
 
   reduceFormalParameters(node, {items, rest}) {
-    return this.commaSep(items.concat(rest == null ? [] : [seq(this.t("..."), this.sep(Sep.REST), rest)]), Sep.PARAMETER_AFTER_COMMA);
+    return this.commaSep(items.concat(rest == null ? [] : [seq(this.t("..."), this.sep(Sep.REST), rest)]), Sep.PARAMETER_BEFORE_COMMA, Sep.PARAMETER_AFTER_COMMA);
   }
 
   reduceArrowExpression(node, {params, body}) {
     if (node.params.rest != null || node.params.items.length !== 1 || node.params.items[0].type !== "BindingIdentifier") {
-      params = this.paren(params);
+      params = this.paren(params, Sep.ARROW_PARAMETERS_PAREN_BEFORE, Sep.ARROW_PARAMETERS_PAREN_AFTER, Sep.ARROW_PARAMETERS_PAREN_EMPTY);
     }
     if (node.body.type === "FunctionBody") {
       body = this.brace(body, node);
     } else if (body.startsWithCurly) {
-      body = this.paren(body);
+      body = this.paren(body, Sep.ARROW_BODY_PAREN_BEFORE, Sep.ARROW_BODY_PAREN_AFTER);
     }
     return seq(params, this.sep(Sep.BEFORE_ARROW), this.t("=>"), this.sep(Sep.AFTER_ARROW), this.p(node.body, Precedence.Assignment, body));
   }
 
   reduceGetter(node, {name, body}) {
-    return seq(this.t("get"), this.sep(Sep.AFTER_GET), name, this.sep(Sep.BEFORE_GET_PARAMS), this.paren(empty()), this.sep(Sep.BEFORE_GET_BODY), this.brace(body, node));
+    return seq(this.t("get"), this.sep(Sep.AFTER_GET), name, this.sep(Sep.BEFORE_GET_PARAMS), this.paren(empty(), null, null, Sep.GETTER_PARAMS), this.sep(Sep.BEFORE_GET_BODY), this.brace(body, node));
   }
 
   reduceIdentifierExpression(node) {
@@ -577,9 +655,9 @@ export class ExtensibleCodeGen {
     }
     return objectAssign(
       seq(this.t("if"), this.sep(Sep.AFTER_IF),
-        this.paren(test), this.sep(Sep.AFTER_IF_TEST),
+        this.paren(test, Sep.IF_PAREN_BEFORE, Sep.IF_PAREN_AFTER), this.sep(Sep.AFTER_IF_TEST),
         consequent,
-        alternate ? seq(this.sep(Sep.BEFORE_ELSE), this.t("else"), this.sep(Sep.AFTER_ELSE), alternate) : empty()),
+        alternate ? seq(this.sep(Sep.BEFORE_ELSE), this.t("else"), this.sep(Sep.AFTER_ELSE), alternate) : empty(), this.sep(Sep.AFTER_STATEMENT(node))),
       {endsWithMissingElse: alternate ? alternate.endsWithMissingElse : true});
   }
 
@@ -589,18 +667,18 @@ export class ExtensibleCodeGen {
       bindings.push(defaultBinding);
     }
     if (namedImports.length > 0) {
-      bindings.push(this.brace(this.commaSep(namedImports, Sep.NAMED_IMPORT_AFTER_COMMA), node));
+      bindings.push(this.brace(this.commaSep(namedImports, Sep.NAMED_IMPORT_BEFORE_COMMA, Sep.NAMED_IMPORT_AFTER_COMMA), node));
     }
     if (bindings.length === 0) {
       return seq(this.t("import"), this.sep(Sep.BEFORE_IMPORT_MODULE), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
     }
-    return seq(this.t("import"), this.sep(Sep.BEFORE_IMPORT_BINDINGS), this.commaSep(bindings, Sep.IMPORT_AFTER_COMMA), this.sep(Sep.AFTER_IMPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(this.t("import"), this.sep(Sep.BEFORE_IMPORT_BINDINGS), this.commaSep(bindings, Sep.IMPORT_BEFORE_COMMA, Sep.IMPORT_AFTER_COMMA), this.sep(Sep.AFTER_IMPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceImportNamespace(node, {defaultBinding, namespaceBinding}) {
     return seq(
       this.t("import"), this.sep(Sep.BEFORE_IMPORT_NAMESPACE),
-      defaultBinding == null ? empty() : seq(defaultBinding, this.t(","), this.sep(Sep.IMPORT_AFTER_COMMA)),
+      defaultBinding == null ? empty() : seq(defaultBinding, this.sep(Sep.IMPORT_BEFORE_COMMA), this.t(","), this.sep(Sep.IMPORT_AFTER_COMMA)),
       this.sep(Sep.BEFORE_IMPORT_STAR), this.t("*"), this.sep(Sep.AFTER_IMPORT_STAR),
       this.t("as"), this.sep(Sep.AFTER_IMPORT_AS),
       namespaceBinding, this.sep(Sep.AFTER_NAMESPACE_BINDING),
@@ -620,7 +698,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_AFTER_COMMA), node), node.moduleSpecifier == null ? empty() : seq(this.sep(Sep.AFTER_EXPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node))));
+    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node), node.moduleSpecifier == null ? empty() : seq(this.sep(Sep.AFTER_EXPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node))));
   }
 
   reduceExport(node, {declaration}) {
@@ -635,7 +713,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceExportDefault(node, {body}) {
-    body = body.startsWithFunctionOrClass ? this.paren(body) : body;
+    body = body.startsWithFunctionOrClass ? this.paren(body, Sep.EXPORT_PAREN_BEFORE, Sep.EXPORT_PAREN_AFTER) : body;
     switch (node.body.type) {
       case "FunctionDeclaration":
       case "ClassDeclaration":
@@ -643,7 +721,7 @@ export class ExtensibleCodeGen {
       default:
         body = seq(body, this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
     }
-    return seq(this.t("export default"), this.sep(Sep.AFTER_EXPORT_DEFAULT), body);
+    return seq(this.t("export"), this.sep(Sep.EXPORT_DEFAULT), this.t("default"), this.sep(Sep.AFTER_EXPORT_DEFAULT), body);
   }
 
   reduceExportSpecifier(node) {
@@ -680,28 +758,28 @@ export class ExtensibleCodeGen {
   }
 
   reduceMethod(node, {name, params, body}) {
-    return seq(node.isGenerator ? seq(this.t("*"), this.sep(Sep.AFTER_METHOD_GENERATOR_STAR)) : empty(), name, this.sep(Sep.AFTER_METHOD_NAME), this.paren(params), this.sep(Sep.BEFORE_METHOD_BODY), this.brace(body, node));
+    return seq(node.isGenerator ? seq(this.t("*"), this.sep(Sep.AFTER_METHOD_GENERATOR_STAR)) : empty(), name, this.sep(Sep.AFTER_METHOD_NAME), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_METHOD_BODY), this.brace(body, node));
   }
 
   reduceModule(node, {directives, items}) {
     if (items.length) {
       items[0] = this.parenToAvoidBeingDirective(node.items[0], items[0]);
     }
-    return seq(...directives, ...items);
+    return seq(...directives, directives.length ? this.sep(Sep.AFTER_MODULE_DIRECTIVES) : empty(), ...items);
   }
 
   reduceNewExpression(node, {callee, arguments: args}) {
-    let calleeRep = getPrecedence(node.callee) == Precedence.Call ? this.paren(callee) :
+    let calleeRep = getPrecedence(node.callee) == Precedence.Call ? this.paren(callee, Sep.NEW_CALLEE_PAREN_BEFORE, Sep.NEW_CALLEE_PAREN_AFTER) :
       this.p(node.callee, getPrecedence(node), callee);
-    return seq(this.t("new"), this.sep(Sep.AFTER_NEW), calleeRep, this.sep(Sep.BEFORE_NEW_ARGS), args.length === 0 ? this.sep(Sep.EMPTY_NEW_CALL) : this.paren(this.commaSep(args, Sep.ARGS_AFTER_COMMA)));
+    return seq(this.t("new"), this.sep(Sep.AFTER_NEW), calleeRep, this.sep(Sep.BEFORE_NEW_ARGS), args.length === 0 ? this.sep(Sep.EMPTY_NEW_CALL) : this.paren(this.commaSep(args, Sep.ARGS_BEFORE_COMMA, Sep.ARGS_AFTER_COMMA), Sep.NEW_PAREN_BEFORE, Sep.NEW_PAREN_AFTER, Sep.NEW_PAREN_EMPTY));
   }
 
   reduceNewTargetExpression() {
-    return this.t("new.target");
+    return seq(this.t("new"), this.sep(Sep.NEW_TARGET_BEFORE_DOT), this.t("."), this.sep(Sep.NEW_TARGET_AFTER_DOT), this.t("target"));
   }
 
   reduceObjectExpression(node, {properties}) {
-    let state = this.brace(this.commaSep(properties, Sep.OBJECT_AFTER_COMMA), node);
+    let state = this.brace(this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA), node);
     state.startsWithCurly = true;
     return state;
   }
@@ -733,11 +811,11 @@ export class ExtensibleCodeGen {
     if (statements.length) {
       statements[0] = this.parenToAvoidBeingDirective(node.statements[0], statements[0]);
     }
-    return seq(...directives, ...statements);
+    return seq(...directives, directives.length ? this.sep(Sep.AFTER_SCRIPT_DIRECTIVES) : empty(), ...statements);
   }
 
   reduceSetter(node, {name, param, body}) {
-    return seq(this.t("set"), this.sep(Sep.AFTER_SET), name, this.sep(Sep.BEFORE_SET_PARAMS), this.paren(param), this.sep(Sep.BEFORE_SET_BODY), this.brace(body, node));
+    return seq(this.t("set"), this.sep(Sep.AFTER_SET), name, this.sep(Sep.BEFORE_SET_PARAMS), this.paren(param, Sep.SETTER_PARAM_BEFORE, Sep.SETTER_PARAM_AFTER), this.sep(Sep.BEFORE_SET_BODY), this.brace(body, node));
   }
 
   reduceShorthandProperty(node) {
@@ -745,7 +823,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceStaticMemberExpression(node, {object, property}) {
-    const state = seq(this.p(node.object, getPrecedence(node), object), this.t("."), this.t(property));
+    const state = seq(this.p(node.object, getPrecedence(node), object), this.sep(Sep.BEFORE_STATIC_MEMBER_DOT), this.t("."), this.sep(Sep.AFTER_STATIC_MEMBER_DOT), this.t(property));
     state.startsWithLet = object.startsWithLet;
     state.startsWithCurly = object.startsWithCurly;
     state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;
@@ -776,18 +854,18 @@ export class ExtensibleCodeGen {
   }
 
   reduceSwitchStatement(node, {discriminant, cases}) {
-    return seq(this.t("switch"), this.sep(Sep.BEFORE_SWITCH_DISCRIM), this.paren(discriminant), this.sep(Sep.BEFORE_SWITCH_BODY), this.brace(seq(...cases), node), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(this.t("switch"), this.sep(Sep.BEFORE_SWITCH_DISCRIM), this.paren(discriminant, Sep.SWITCH_DISCRIM_PAREN_BEFORE, Sep.SWITCH_DISCRIM_PAREN_AFTER), this.sep(Sep.BEFORE_SWITCH_BODY), this.brace(seq(...cases), node), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceSwitchStatementWithDefault(node, {discriminant, preDefaultCases, defaultCase, postDefaultCases}) {
     return seq(
       this.t("switch"),
-      this.sep(Sep.BEFORE_SWITCH_DISCRIM), this.paren(discriminant), this.sep(Sep.BEFORE_SWITCH_BODY),
+      this.sep(Sep.BEFORE_SWITCH_DISCRIM), this.paren(discriminant, Sep.SWITCH_DISCRIM_PAREN_BEFORE, Sep.SWITCH_DISCRIM_PAREN_AFTER), this.sep(Sep.BEFORE_SWITCH_BODY),
       this.brace(seq(...preDefaultCases, defaultCase, ...postDefaultCases), node), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceTemplateExpression(node, {tag, elements}) {
-    let state = node.tag == null ? empty() : this.p(node.tag, getPrecedence(node), tag);
+    let state = node.tag == null ? empty() : this.p(node.tag, getPrecedence(node), tag, this.sep(Sep.TEMPLATE_TAG));
     let templateData = "";
     state = seq(state, this.t("`"));
     for (let i = 0, l = node.elements.length; i < l; ++i) {
@@ -798,7 +876,7 @@ export class ExtensibleCodeGen {
         if (i < l - 1) d += "${"
         state = seq(state, this.t(d));
       } else {
-        state = seq(state, elements[i]);
+        state = seq(state, this.sep(Sep.BEFORE_TEMPLATE_EXPRESSION), elements[i], this.sep(Sep.AFTER_TEMPLATE_EXPRESSION));
       }
     }
     state = seq(state, this.t("`"));
@@ -845,7 +923,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceVariableDeclaration(node, {declarators}) {
-    return seq(this.t(node.kind), this.sep(Sep.VARIABLE_DECLARATION), this.commaSep(declarators, Sep.DECLARATORS_AFTER_COMMA));
+    return seq(this.t(node.kind), this.sep(Sep.VARIABLE_DECLARATION), this.commaSep(declarators, Sep.DECLARATORS_BEFORE_COMMA, Sep.DECLARATORS_AFTER_COMMA));
   }
 
   reduceVariableDeclarationStatement(node, {declaration}) {
@@ -856,7 +934,7 @@ export class ExtensibleCodeGen {
     let containsIn = init && init.containsIn && !init.containsGroup;
     if (init) {
       if (init.containsGroup) {
-        init = this.paren(init);
+        init = this.paren(init, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER);
       } else {
         init = markContainsIn(init);
       }
@@ -865,12 +943,12 @@ export class ExtensibleCodeGen {
   }
 
   reduceWhileStatement(node, {test, body}) {
-    return objectAssign(seq(this.t("while"), this.sep(Sep.AFTER_WHILE), this.paren(test), this.sep(Sep.BEFORE_WHILE_BODY), body), {endsWithMissingElse: body.endsWithMissingElse});
+    return objectAssign(seq(this.t("while"), this.sep(Sep.AFTER_WHILE), this.paren(test, Sep.WHILE_TEST_PAREN_BEFORE, Sep.WHILE_TEST_PAREN_AFTER), this.sep(Sep.BEFORE_WHILE_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))), {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceWithStatement(node, {object, body}) {
     return objectAssign(
-      seq(this.t("with"), this.sep(Sep.AFTER_WITH), this.paren(object), this.sep(Sep.BEFORE_WITH_BODY), body),
+      seq(this.t("with"), this.sep(Sep.AFTER_WITH), this.paren(object, Sep.WITH_PAREN_BEFORE, Sep.WITH_PAREN_AFTER), this.sep(Sep.BEFORE_WITH_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 }
@@ -892,11 +970,14 @@ class Linebreak extends CodeRep {
   }
 }
 
-
-
 function withoutTrailingLinebreak(state) {
   if (state && state instanceof Seq) {
     let lastChild = state.children[state.children.length-1];
+    /* istanbul ignore next */
+    while (lastChild instanceof Empty) {
+      state.children.pop();
+      lastChild = state.children[state.children.length-1];
+    }
     /* istanbul ignore else */
     if (lastChild instanceof Seq) {
       withoutTrailingLinebreak(lastChild);
@@ -905,10 +986,6 @@ function withoutTrailingLinebreak(state) {
     }
   }
   return state;
-}
-
-function isEmpty(codeRep) {
-  return codeRep instanceof Empty || codeRep instanceof Linebreak || (codeRep instanceof Seq && codeRep.children.every(isEmpty));
 }
 
 function indent(rep, includingFinal) {
@@ -929,7 +1006,7 @@ function indent(rep, includingFinal) {
 export class FormattedCodeGen extends ExtensibleCodeGen {
   parenToAvoidBeingDirective(element, original) {
     if (element && element.type === "ExpressionStatement" && element.expression.type === "LiteralStringExpression") {
-      return seq(this.paren(original.children[0]), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(element)));
+      return seq(this.paren(original.children[0], Sep.PAREN_AVOIDING_DIRECTIVE_BEFORE, Sep.PAREN_AVOIDING_DIRECTIVE_AFTER), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(element)));
     }
     return original;
   }
@@ -953,7 +1030,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
   }
 
   reduceDoWhileStatement(node, {body, test}) {
-    return seq(this.t("do"), this.sep(Sep.AFTER_DO), withoutTrailingLinebreak(body), this.sep(Sep.BEFORE_DOWHILE_WHILE), this.t("while"), this.sep(Sep.AFTER_DOWHILE_WHILE), this.paren(test), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(this.t("do"), this.sep(Sep.AFTER_DO), withoutTrailingLinebreak(body), this.sep(Sep.BEFORE_DOWHILE_WHILE), this.t("while"), this.sep(Sep.AFTER_DOWHILE_WHILE), this.paren(test, Sep.DO_WHILE_TEST_PAREN_BEFORE, Sep.DO_WHILE_TEST_PAREN_AFTER), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceIfStatement(node, {test, consequent, alternate}) {
@@ -962,7 +1039,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
     }
     return objectAssign(
       seq(this.t("if"), this.sep(Sep.AFTER_IF),
-        this.paren(test), this.sep(Sep.AFTER_IF_TEST),
+        this.paren(test, Sep.IF_PAREN_BEFORE, Sep.IF_PAREN_AFTER), this.sep(Sep.AFTER_IF_TEST),
         withoutTrailingLinebreak(consequent),
         alternate ? seq(this.sep(Sep.BEFORE_ELSE), this.t("else"), this.sep(Sep.AFTER_ELSE), withoutTrailingLinebreak(alternate)) : empty(),
         this.sep(Sep.AFTER_STATEMENT(node))),
@@ -1084,6 +1161,16 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case "AFTER_ASSIGN_OP":
         return this.t(" ");
       case "AFTER_STATEMENT":
+        switch (separator.node.type) {
+          case "ForInStatement":
+          case "ForOfStatement":
+          case "ForStatement":
+          case "WhileStatement":
+          case "WithStatement":
+            return empty(); // because those already end with an AFTER_STATEMENT
+          default:
+            return new Linebreak;
+        }
       case "AFTER_CLASS_ELEMENT":
       case "BEFORE_CASE_BODY":
       case "AFTER_CASE_BODY":

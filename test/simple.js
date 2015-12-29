@@ -20,8 +20,11 @@ var codeGen = require("../")["default"];
 var MinimalCodeGen = require("../")["MinimalCodeGen"];
 var FormattedCodeGen = require("../")["FormattedCodeGen"];
 var ExtensibleCodeGen = require("../")["ExtensibleCodeGen"];
+var Sep = require("../")["Sep"];
 var parse = require("shift-parser").parseModule;
 var parseScript = require("shift-parser").parseScript;
+var reduce = require("shift-reducer").default;
+
 
 /*
 describe("API", function () {
@@ -897,5 +900,18 @@ describe("Pretty code generator", function () {
 
   it("should print the empty script as the empty script", function () {
     testPretty("", true);
-  })
+  });
+
+  it("should print directives with linebreaks", function () {
+    testPretty("\"use strict\";\n!function () {\n  \"use strict\";\n};\n", true);
+  });
 });
+
+describe("CodeRep", function(){
+  it("should call forEach the appropriate number of times", function () {
+    var tree = reduce(new MinimalCodeGen, parse("f(0,1,(2,3))"));
+    var count = 0;
+    tree.forEach(function(){++count;});
+    expect(count).eql(13);
+  });
+})
