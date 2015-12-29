@@ -24,15 +24,51 @@ var Sep = require("../")["Sep"];
 var parse = require("shift-parser").parseModule;
 var parseScript = require("shift-parser").parseScript;
 var reduce = require("shift-reducer").default;
+var Precedence = require("../").Precedence;
+var getPrecedence = require("../").getPrecedence;
+var escapeStringLiteral = require("../").escapeStringLiteral;
+var CodeRep = require("../").CodeRep;
+var Empty = require("../").Empty;
+var Token = require("../").Token;
+var NumberCodeRep = require("../").NumberCodeRep;
+var Paren = require("../").Paren;
+var Bracket = require("../").Bracket;
+var Brace = require("../").Brace;
+var NoIn = require("../").NoIn;
+var ContainsIn = require("../").ContainsIn;
+var Seq = require("../").Seq;
+var Semi = require("../").Semi;
+var CommaSep = require("../").CommaSep;
+var SemiOp = require("../").SemiOp;
 
 
-/*
 describe("API", function () {
   it("should exist", function () {
     expect(typeof codeGen).be("function");
   });
+
+  it("should export the various codereps", function () {
+    expect(typeof Precedence).be("object");
+    expect(typeof getPrecedence).be("function");
+    expect(typeof escapeStringLiteral).be("function");
+    expect(typeof CodeRep).be("function");
+    expect(typeof Empty).be("function");
+    expect(typeof Token).be("function");
+    expect(typeof NumberCodeRep).be("function");
+    expect(typeof Paren).be("function");
+    expect(typeof Bracket).be("function");
+    expect(typeof Brace).be("function");
+    expect(typeof NoIn).be("function");
+    expect(typeof ContainsIn).be("function");
+    expect(typeof Seq).be("function");
+    expect(typeof Semi).be("function");
+    expect(typeof CommaSep).be("function");
+    expect(typeof SemiOp).be("function");
+  });
+
 });
 
+/*
 describe("everything.js", function () {
   it("should round trip", function () {
     var source;
