@@ -17,16 +17,58 @@
 var fs = require("fs");
 var expect = require("expect.js");
 var codeGen = require("../")["default"];
+var MinimalCodeGen = require("../")["MinimalCodeGen"];
+var FormattedCodeGen = require("../")["FormattedCodeGen"];
+var ExtensibleCodeGen = require("../")["ExtensibleCodeGen"];
+var Sep = require("../")["Sep"];
 var parse = require("shift-parser").parseModule;
 var parseScript = require("shift-parser").parseScript;
+var reduce = require("shift-reducer").default;
+var Precedence = require("../").Precedence;
+var getPrecedence = require("../").getPrecedence;
+var escapeStringLiteral = require("../").escapeStringLiteral;
+var CodeRep = require("../").CodeRep;
+var Empty = require("../").Empty;
+var Token = require("../").Token;
+var NumberCodeRep = require("../").NumberCodeRep;
+var Paren = require("../").Paren;
+var Bracket = require("../").Bracket;
+var Brace = require("../").Brace;
+var NoIn = require("../").NoIn;
+var ContainsIn = require("../").ContainsIn;
+var Seq = require("../").Seq;
+var Semi = require("../").Semi;
+var CommaSep = require("../").CommaSep;
+var SemiOp = require("../").SemiOp;
 
-/*
+
 describe("API", function () {
   it("should exist", function () {
     expect(typeof codeGen).be("function");
   });
+
+  it("should export the various codereps", function () {
+    expect(typeof Precedence).be("object");
+    expect(typeof getPrecedence).be("function");
+    expect(typeof escapeStringLiteral).be("function");
+    expect(typeof CodeRep).be("function");
+    expect(typeof Empty).be("function");
+    expect(typeof Token).be("function");
+    expect(typeof NumberCodeRep).be("function");
+    expect(typeof Paren).be("function");
+    expect(typeof Bracket).be("function");
+    expect(typeof Brace).be("function");
+    expect(typeof NoIn).be("function");
+    expect(typeof ContainsIn).be("function");
+    expect(typeof Seq).be("function");
+    expect(typeof Semi).be("function");
+    expect(typeof CommaSep).be("function");
+    expect(typeof SemiOp).be("function");
+  });
+
 });
 
+/*
 describe("everything.js", function () {
   it("should round trip", function () {
     var source;
@@ -62,6 +104,7 @@ describe("Code generator", function () {
         throw new Error('Not supported');
       }
       expect(codeGen(tree)).eql(to);
+      expect(codeGen(tree, new ExtensibleCodeGen)).eql(to);
     }
 
     function test(source) {
@@ -69,7 +112,9 @@ describe("Code generator", function () {
         throw new Error('Not supported');
       }
       expect(codeGen(parse(source))).be(source);
+      expect(codeGen(parse(source), new ExtensibleCodeGen)).be(source);
       expect(parse(codeGen(parse(source)))).eql(parse(source));
+      expect(parse(codeGen(parse(source), new FormattedCodeGen))).eql(parse(source));
     }
 
     function testScript(source) {
@@ -77,7 +122,9 @@ describe("Code generator", function () {
         throw new Error('Not supported');
       }
       expect(codeGen(parseScript(source))).be(source);
+      expect(codeGen(parseScript(source), new ExtensibleCodeGen)).be(source);
       expect(parseScript(codeGen(parseScript(source)))).eql(parseScript(source));
+      expect(parseScript(codeGen(parseScript(source), new FormattedCodeGen))).eql(parseScript(source));
     }
 
     function test2(expected, source) {
@@ -85,7 +132,9 @@ describe("Code generator", function () {
         throw new Error('Not supported');
       }
       expect(codeGen(parse(source))).be(expected);
+      expect(codeGen(parse(source), new ExtensibleCodeGen)).be(expected);
       expect(codeGen(parse(expected))).be(expected);
+      expect(codeGen(parse(expected), new ExtensibleCodeGen)).be(expected);
     }
 
     function test2Script(expected, source) {
@@ -441,6 +490,7 @@ describe("Code generator", function () {
       test("a=>{0;return}");
       test("()=>function(){}");
       test("()=>class{}");
+      test("()=>(1,2)");
     });
 
     it("NewTargetExpression", function () {
@@ -808,20 +858,96 @@ describe("Code generator", function () {
 });
 
 describe("Pretty code generator", function () {
-  function testPretty(source) {
-    expect(codeGen(parse(source), true)).be(source);
-    expect(parse(codeGen(parse(source), true))).eql(parse(source));
+  function testPretty(source, scriptMode) {
+    var parseTest = scriptMode ? parseScript : parse;
+    expect(codeGen(parseTest(source), new FormattedCodeGen)).be(source);
+    expect(parseTest(codeGen(parseTest(source), new FormattedCodeGen))).eql(parseTest(source));
   }
 
-  it("should ouput a newline after brace", function () {
-    testPretty("export default function(){\n}");
+  function testLoose(to, tree) {
+    if (arguments.length !== 2) {
+      throw new Error('Not supported');
+    }
+    expect(codeGen(tree, new FormattedCodeGen)).eql(to);
+  }
+
+  it("should output a newline after brace", function () {
+    testPretty("export default function () {\n  null;\n}\n");
   });
 
-  it("should ouput a newline after semiOp", function () {
-    testPretty("export const FOO=123;\n");
+  it("should output a newline after semiOp", function () {
+    testPretty("export const FOO = 123;\n");
   });
 
-  it("should ouput no newline after semi", function () {
-    testPretty("for(;;){\n}");
+  it("should output no newline after semi", function () {
+    testPretty("(function () {\n  for (var x = 0;;) {}\n});\n");
+  });
+
+  it("should indent", function () {
+    testPretty("function f() {\n  function g() {\n    null;\n    l: for (;;) {\n      break l;\n    }\n  }\n}\n");
+  });
+
+  it("should insert spaces in expressions", function () {
+    testPretty("let [x, , y] = (0 + 1, {a: 2, b: 3}, (c, d) => (4, 5));\n");
+  });
+
+  it("should insert spaces in statements", function () {
+    testPretty("with ({}) {}\n", true);
+  });
+
+  it("should put else and while inline", function () {
+    testPretty("if (0) {} else {}\n");
+    testPretty("do {} while (true);\n");
+  });
+
+  it("should not output linebreaks after function expressions", function () {
+    testPretty("(function () {});\n");
+  });
+
+  it("should indent appropriately within expressions", function () {
+    testPretty("[function () {\n  [function () {\n    let x = a in b;\n  }];\n}];\n");
+  });
+
+  it("should add spaces to the appropriate unary operations", function () {
+    testPretty("++x;\n--x;\n+[];\n-[];\n+[];\n![];\n~[];\nvoid [];\ntypeof [];\ndelete [];\n");
+  });
+
+  it("should pretty-print switch statements", function () {
+    testPretty("switch (0) {\n  case 0:\n  case 1:\n    0;\n  default:\n    0;\n    0;\n  case 3:\n    0;\n    0;\n  case 4:\n}\n");
+  });
+
+  it("should handle literal string expressions and directives properly", function () {
+    testPretty("'\"';\n(\"expression\");\n");
+  });
+
+  it("should continue handling missing-else condition appropriately", function () {
+    function statement(stmt) {
+      return { type: "Script", directives: [], statements: [stmt] };
+    }
+
+    var IDENT = { type: "IdentifierExpression", name: "a" };
+    var EMPTY = { type: "EmptyStatement" };
+
+    var MISSING_ELSE = { type: "IfStatement", test: IDENT, consequent: EMPTY, alternate: null };
+    testLoose("if (a) {\n  if (a) ;\n} else ;\n",
+      statement({ type: "IfStatement", test: IDENT, consequent: MISSING_ELSE, alternate: EMPTY })
+    );
+  });
+
+  it("should print the empty script as the empty script", function () {
+    testPretty("", true);
+  });
+
+  it("should print directives with linebreaks", function () {
+    testPretty("\"use strict\";\n!function () {\n  \"use strict\";\n};\n", true);
   });
 });
+
+describe("CodeRep", function(){
+  it("should call forEach the appropriate number of times", function () {
+    var tree = reduce(new MinimalCodeGen, parse("f(0,1,(2,3))"));
+    var count = 0;
+    tree.forEach(function(){++count;});
+    expect(count).eql(13);
+  });
+})
