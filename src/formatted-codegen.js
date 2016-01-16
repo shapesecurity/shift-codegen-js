@@ -1,4 +1,4 @@
-import * as objectAssign from "object-assign";
+import objectAssign from "object-assign";
 import {keyword} from "esutils";
 import {Precedence, getPrecedence, escapeStringLiteral, CodeRep, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp} from "./coderep";
 

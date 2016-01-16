@@ -14,16 +14,14 @@
   ],
   "scripts": {
     "test": "mocha --inline-diffs --check-leaks --ui tdd --reporter dot --timeout 5000 --recursive test",
-    "build": "babel --auxiliary-comment-before 'istanbul ignore next' --source-maps-inline --out-dir dist src",
-    "generate-coverage": "istanbul cover _mocha -- --inline-diffs --check-leaks --ui tdd --reporter dot --timeout 5000 --recursive test",
-    "check-coverage": "istanbul check-coverage --statements 100 --functions 100 --branches 100 --lines 100",
+    "build": "babel --source-maps-inline --out-dir dist src",
     "cjsify": "cjsify --export ShiftCodegen dist/index.js > shift-codegen.js",
     "prepublish": "rm -rf dist/* && npm update && npm run build"
   },
   "dependencies": {
     "esutils": "^2.0.2",
     "object-assign": "^3.0.0",
-    "shift-reducer": "^3.0.0"
+    "shift-reducer": "^3.0.2"
   },
   "devDependencies": {
     "babel-cli": "6.3.13",
@@ -32,7 +30,6 @@
     "commonjs-everywhere": "0.9.7",
     "everything.js": "^1.0.3",
     "expect.js": "0.3.1",
-    "istanbul": "0.3.17",
     "mocha": "2.2.5",
     "shift-parser": "3.0.1"
   },
