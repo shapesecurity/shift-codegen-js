@@ -67,6 +67,7 @@ export function getPrecedence(node) {
     case "ThisExpression":
       return Precedence.Primary;
 
+    case "ArrowExpression":
     case "AssignmentExpression":
     case "CompoundAssignmentExpression":
     case "YieldExpression":

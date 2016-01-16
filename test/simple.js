@@ -491,6 +491,7 @@ describe("Code generator", function () {
       test("()=>function(){}");
       test("()=>class{}");
       test("()=>(1,2)");
+      test("(()=>0)()");
     });
 
     it("NewTargetExpression", function () {
