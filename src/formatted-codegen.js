@@ -1151,7 +1151,6 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case "BEFORE_FOR_TEST":
       case "BEFORE_FOR_UPDATE":
       case "BEFORE_FOR_BODY":
-      case "AFTER_GENERATOR_STAR":
       case "BEFORE_FUNCTION_DECLARATION_BODY":
       case "BEFORE_FUNCTION_EXPRESSION_BODY":
       case "BEFORE_ARROW":
