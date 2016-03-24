@@ -810,6 +810,7 @@ describe("Code generator", function () {
       test("let a;export{a}from\"m\"");
       test("let a,b;export{a,b}from\"m\"");
       test("export{}");
+      test("export{};0");
       test("let a;export{a}");
       test("let a,b;export{a,b}");
     });

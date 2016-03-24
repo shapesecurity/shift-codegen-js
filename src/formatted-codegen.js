@@ -750,7 +750,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), node.moduleSpecifier == null ? empty() : seq(this.sep(Sep.AFTER_EXPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node))));
+    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), node.moduleSpecifier == null ? empty() : seq(this.sep(Sep.AFTER_EXPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier))), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceExport(node, {declaration}) {
