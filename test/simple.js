@@ -252,6 +252,14 @@ describe("Code generator", function () {
     it("ClassDeclaration", function () {
       test("class A{}");
       test("class A extends B{}");
+      test("class A extends(B,C){}");
+      test("class A extends(+B){}");
+      test("class A extends(()=>0){}");
+      test("class A extends[]{}");
+      test("class A extends{}{}");
+      test("class A extends B(){}");
+      test("class A extends new B{}");
+      test("class A extends B.C{}");
     });
 
     it("ClassExpression", function () {
@@ -259,6 +267,14 @@ describe("Code generator", function () {
       test("(class A{})");
       test("(class A extends B{})");
       test("(class extends B{})");
+      test("(class A extends(B,C){})");
+      test("(class A extends(+B){})");
+      test("(class A extends(()=>0){})");
+      test("(class A extends[]{})");
+      test("(class A extends{}{})");
+      test("(class A extends B(){})");
+      test("(class A extends new B{})");
+      test("(class A extends B.C{})");
     });
 
     it("ClassElement", function () {

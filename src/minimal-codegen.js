@@ -208,7 +208,7 @@ export default class MinimalCodeGen {
   reduceClassDeclaration(node, {name, super: _super, elements}) {
     let state = seq(t("class"), name);
     if (_super != null) {
-      state = seq(state, t("extends"), _super);
+      state = seq(state, t("extends"), p(node.super, Precedence.New, _super));
     }
     state = seq(state, t("{"), ...elements, t("}"));
     return state;
@@ -220,7 +220,7 @@ export default class MinimalCodeGen {
       state = seq(state, name);
     }
     if (_super != null) {
-      state = seq(state, t("extends"), _super);
+      state = seq(state, t("extends"), p(node.super, Precedence.New, _super));
     }
     state = seq(state, t("{"), ...elements, t("}"));
     state.startsWithFunctionOrClass = true;
