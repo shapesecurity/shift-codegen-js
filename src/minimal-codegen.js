@@ -206,7 +206,7 @@ export default class MinimalCodeGen {
   }
 
   reduceClassDeclaration(node, {name, super: _super, elements}) {
-    let state = seq(t("class"), name);
+    let state = seq(t("class"), node.name.name === "*default*" ? empty() : name);
     if (_super != null) {
       state = seq(state, t("extends"), _super);
     }

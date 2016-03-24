@@ -530,7 +530,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceClassDeclaration(node, {name, super: _super, elements}) {
-    let state = seq(this.t("class"), this.sep(Sep.BEFORE_CLASS_NAME), name);
+    let state = seq(this.t("class"), node.name.name === "*default*" ? empty() : seq(this.sep(Sep.BEFORE_CLASS_NAME), name));
     if (_super != null) {
       state = seq(state, this.sep(Sep.BEFORE_EXTENDS), this.t("extends"), this.sep(Sep.AFTER_EXTENDS), _super);
     }
