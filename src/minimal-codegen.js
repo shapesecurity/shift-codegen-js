@@ -422,7 +422,7 @@ export default class MinimalCodeGen {
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp()));
+    return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier))), semiOp());
   }
 
   reduceExport(node, {declaration}) {
