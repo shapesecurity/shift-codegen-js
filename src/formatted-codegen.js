@@ -532,7 +532,7 @@ export class ExtensibleCodeGen {
   reduceClassDeclaration(node, {name, super: _super, elements}) {
     let state = seq(this.t("class"), node.name.name === "*default*" ? empty() : seq(this.sep(Sep.BEFORE_CLASS_NAME), name));
     if (_super != null) {
-      state = seq(state, this.sep(Sep.BEFORE_EXTENDS), this.t("extends"), this.sep(Sep.AFTER_EXTENDS), _super);
+      state = seq(state, this.sep(Sep.BEFORE_EXTENDS), this.t("extends"), this.sep(Sep.AFTER_EXTENDS), this.p(node.super, Precedence.New, _super));
     }
     state = seq(state, this.sep(Sep.BEFORE_CLASS_DECLARATION_ELEMENTS), this.brace(seq(...elements), node, Sep.CLASS_BRACE_INITIAL, Sep.CLASS_BRACE_FINAL, Sep.CLASS_EMPTY), this.sep(Sep.AFTER_STATEMENT(node)));
     return state;
@@ -544,7 +544,7 @@ export class ExtensibleCodeGen {
       state = seq(state, this.sep(Sep.BEFORE_CLASS_NAME), name);
     }
     if (_super != null) {
-      state = seq(state, this.sep(Sep.BEFORE_EXTENDS), this.t("extends"), this.sep(Sep.AFTER_EXTENDS), _super);
+      state = seq(state, this.sep(Sep.BEFORE_EXTENDS), this.t("extends"), this.sep(Sep.AFTER_EXTENDS), this.p(node.super, Precedence.New, _super));
     }
     state = seq(state, this.sep(Sep.BEFORE_CLASS_EXPRESSION_ELEMENTS), this.brace(seq(...elements), node, Sep.CLASS_EXPRESSION_BRACE_INITIAL, Sep.CLASS_EXPRESSION_BRACE_FINAL, Sep.CLASS_EXPRESSION_BRACE_EMPTY));
     state.startsWithFunctionOrClass = true;
