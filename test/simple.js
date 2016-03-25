@@ -835,6 +835,7 @@ describe("Code generator", function () {
       test("export default 0;0");
       test("export default function f(){}");
       test("export default function*f(){}");
+      test("export default class{}");
       test("export default class A{}");
       test("export default(class{})");
       test("export default(function(){})");
