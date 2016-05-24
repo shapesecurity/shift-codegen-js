@@ -54,6 +54,7 @@ const separatorNames = [
   "BEFORE_TERNARY_COLON",
   "AFTER_TERNARY_COLON",
   "COMPUTED_MEMBER_EXPRESSION",
+  "COMPUTED_MEMBER_ASSIGNMENT_TARGET",
   "AFTER_DO",
   "BEFORE_DOWHILE_WHILE",
   "AFTER_DOWHILE_WHILE",
@@ -137,6 +138,8 @@ const separatorNames = [
   "AFTER_SCRIPT_DIRECTIVES",
   "BEFORE_STATIC_MEMBER_DOT",
   "AFTER_STATIC_MEMBER_DOT",
+  "BEFORE_STATIC_MEMBER_ASSIGNMENT_TARGET_DOT",
+  "AFTER_STATIC_MEMBER_ASSIGNMENT_TARGET_DOT",
   "BEFORE_CASE_TEST",
   "AFTER_CASE_TEST",
   "BEFORE_CASE_BODY",
@@ -260,6 +263,8 @@ const separatorNames = [
   "ARRAY_FINAL",
   "COMPUTED_MEMBER_BRACKET_INTIAL",
   "COMPUTED_MEMBER_BRACKET_FINAL",
+  "COMPUTED_MEMBER_ASSIGNMENT_TARGET_BRACKET_INTIAL",
+  "COMPUTED_MEMBER_ASSIGNMENT_TARGET_BRACKET_FINAL",
   "COMPUTED_PROPERTY_BRACKET_INTIAL",
   "COMPUTED_PROPERTY_BRACKET_FINAL",
 ];
@@ -416,6 +421,18 @@ export class ExtensibleCodeGen {
     return objectAssign(seq(leftCode, this.sep(Sep.BEFORE_ASSIGN_OP("=")), this.t("="), this.sep(Sep.AFTER_ASSIGN_OP("=")), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
   }
 
+  reduceAssignmentTargetIdentifier(node) {
+    let a = this.t(node.name);
+    if (node.name === "let") {
+      a.startsWithLet = true;
+    }
+    return a;
+  }
+
+  reduceAssignmentTargetWithDefault(node, {binding, init}) {
+    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), init);
+  }
+
   reduceCompoundAssignmentExpression(node, {binding, expression}) {
     let leftCode = binding;
     let rightCode = expression;
@@ -473,12 +490,12 @@ export class ExtensibleCodeGen {
     return a;
   }
 
-  reduceArrayBinding(node, {elements, restElement}) {
+  reduceArrayAssignmentTarget(node, {elements, rest}) {
     let content;
     if (elements.length === 0) {
-      content = restElement == null ? empty() : seq(this.t("..."), this.sep(Sep.REST), restElement);
+      content = rest == null ? empty() : seq(this.t("..."), this.sep(Sep.REST), rest);
     } else {
-      elements = elements.concat(restElement == null ? [] : [seq(this.t("..."), this.sep(Sep.REST), restElement)]);
+      elements = elements.concat(rest == null ? [] : [seq(this.t("..."), this.sep(Sep.REST), rest)]);
       content = this.commaSep(elements.map(e=>this.getAssignmentExpr(e)), Sep.ARRAY_BEFORE_COMMA, Sep.ARRAY_AFTER_COMMA);
       if (elements.length > 0 && elements[elements.length - 1] == null) {
         content = seq(content, this.sep(Sep.ARRAY_BEFORE_COMMA), this.t(","), this.sep(Sep.ARRAY_AFTER_COMMA));
@@ -487,10 +504,39 @@ export class ExtensibleCodeGen {
     return this.bracket(content, Sep.ARRAY_INITIAL, Sep.ARRAY_FINAL, Sep.ARRAY_EMPTY);
   }
 
+  reduceArrayBinding(node, {elements, rest}) {
+    let content;
+    if (elements.length === 0) {
+      content = rest == null ? empty() : seq(this.t("..."), this.sep(Sep.REST), rest);
+    } else {
+      elements = elements.concat(rest == null ? [] : [seq(this.t("..."), this.sep(Sep.REST), rest)]);
+      content = this.commaSep(elements.map(e=>this.getAssignmentExpr(e)), Sep.ARRAY_BEFORE_COMMA, Sep.ARRAY_AFTER_COMMA);
+      if (elements.length > 0 && elements[elements.length - 1] == null) {
+        content = seq(content, this.sep(Sep.ARRAY_BEFORE_COMMA), this.t(","), this.sep(Sep.ARRAY_AFTER_COMMA));
+      }
+    }
+    return this.bracket(content, Sep.ARRAY_INITIAL, Sep.ARRAY_FINAL, Sep.ARRAY_EMPTY);
+  }
+
+  reduceObjectAssignmentTarget(node, {properties}) {
+    let state = this.brace(this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA), node, Sep.OBJECT_BRACE_INITIAL, Sep.OBJECT_BRACE_FINAL, Sep.OBJECT_EMPTY);
+    state.startsWithCurly = true;
+    return state;
+  }
+
   reduceObjectBinding(node, {properties}) {
     let state = this.brace(this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA), node, Sep.OBJECT_BRACE_INITIAL, Sep.OBJECT_BRACE_FINAL, Sep.OBJECT_EMPTY);
     state.startsWithCurly = true;
     return state;
+  }
+
+  reduceAssignmentTargetPropertyIdentifier(node, {binding, init}) {
+    if (node.init == null) return binding;
+    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), init);
+  }
+
+  reduceAssignmentTargetPropertyProperty(node, {name, binding}) {
+    return seq(name, this.sep(Sep.BEFORE_PROP), this.t(":"), this.sep(Sep.AFTER_PROP), binding);
   }
 
   reduceBindingPropertyIdentifier(node, {binding, init}) {
@@ -555,6 +601,21 @@ export class ExtensibleCodeGen {
     method = seq(this.sep(Sep.BEFORE_CLASS_ELEMENT), method, this.sep(Sep.AFTER_CLASS_ELEMENT));
     if (!node.isStatic) return method;
     return seq(this.t("static"), this.sep(Sep.AFTER_STATIC), method);
+  }
+
+  reduceComputedMemberAssignmentTarget(node, {object, expression}) {
+    let startsWithLetSquareBracket =
+      object.startsWithLetSquareBracket ||
+      node.object.type === "IdentifierExpression" && node.object.name === "let";
+    return objectAssign(
+      seq(this.p(node.object, getPrecedence(node), object), this.sep(Sep.COMPUTED_MEMBER_ASSIGNMENT_TARGET), this.bracket(expression, Sep.COMPUTED_MEMBER_ASSIGNMENT_TARGET_BRACKET_INTIAL, Sep.COMPUTED_MEMBER_ASSIGNMENT_TARGET_BRACKET_FINAL)),
+      {
+        startsWithLet: object.startsWithLet,
+        startsWithLetSquareBracket,
+        startsWithCurly: object.startsWithCurly,
+        startsWithFunctionOrClass: object.startsWithFunctionOrClass,
+      }
+    );
   }
 
   reduceComputedMemberExpression(node, {object, expression}) {
@@ -627,7 +688,7 @@ export class ExtensibleCodeGen {
       case "VariableDeclaration":
         leftP = noIn(markContainsIn(left));
         break;
-      case "BindingIdentifier":
+      case "AssignmentTargetIdentifier":
         if (node.left.name === "let") {
           leftP = this.paren(left, Sep.FOR_IN_LET_PAREN_BEFORE, Sep.FOR_IN_LET_PAREN_BEFORE);
         }
@@ -750,7 +811,11 @@ export class ExtensibleCodeGen {
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), node.moduleSpecifier == null ? empty() : seq(this.sep(Sep.AFTER_EXPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier))), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), this.sep(Sep.AFTER_EXPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+  }
+
+  reduceExportLocals(node, {namedExports}) {
+    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), this.sep(Sep.AFTER_EXPORT_BINDINGS), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceExport(node, {declaration}) {
@@ -776,9 +841,14 @@ export class ExtensibleCodeGen {
     return seq(this.t("export"), this.sep(Sep.EXPORT_DEFAULT), this.t("default"), this.sep(Sep.AFTER_EXPORT_DEFAULT), body);
   }
 
-  reduceExportSpecifier(node) {
-    if (node.name == null) return this.t(node.exportedName);
+  reduceExportFromSpecifier(node) {
+    if (node.exportedName == null) return this.t(node.name);
     return seq(this.t(node.name), this.sep(Sep.BEFORE_EXPORT_AS), this.t("as"), this.sep(Sep.AFTER_EXPORT_AS), this.t(node.exportedName));
+  }
+
+  reduceExportLocalSpecifier(node, {name}) {
+    if (node.exportedName == null) return name;
+    return seq(name, this.sep(Sep.BEFORE_EXPORT_AS), this.t("as"), this.sep(Sep.AFTER_EXPORT_AS), this.t(node.exportedName));
   }
 
   reduceLabeledStatement(node, {label, body}) {
@@ -802,7 +872,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceLiteralRegExpExpression(node) {
-    return this.t(`/${node.pattern}/${node.flags}`);
+    return this.t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`);
   }
 
   reduceLiteralStringExpression(node) {
@@ -870,8 +940,17 @@ export class ExtensibleCodeGen {
     return seq(this.t("set"), this.sep(Sep.AFTER_SET), name, this.sep(Sep.BEFORE_SET_PARAMS), this.paren(param, Sep.SETTER_PARAM_BEFORE, Sep.SETTER_PARAM_AFTER), this.sep(Sep.BEFORE_SET_BODY), this.brace(body, node, Sep.SET_BRACE_INTIIAL, Sep.SET_BRACE_FINAL, Sep.SET_BRACE_EMPTY));
   }
 
-  reduceShorthandProperty(node) {
-    return this.t(node.name);
+  reduceShorthandProperty(node, {name}) {
+    return name;
+  }
+
+  reduceStaticMemberAssignmentTarget(node, {object, property}) {
+    const state = seq(this.p(node.object, getPrecedence(node), object), this.sep(Sep.BEFORE_STATIC_MEMBER_ASSIGNMENT_TARGET_DOT), this.t("."), this.sep(Sep.AFTER_STATIC_MEMBER_ASSIGNMENT_TARGET_DOT), this.t(property));
+    state.startsWithLet = object.startsWithLet;
+    state.startsWithCurly = object.startsWithCurly;
+    state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;
+    state.startsWithFunctionOrClass = object.startsWithFunctionOrClass;
+    return state;
   }
 
   reduceStaticMemberExpression(node, {object, property}) {
@@ -1069,6 +1148,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
     }
 
     switch (node.type) {
+      case "ObjectAssignmentTarget":
       case "ObjectBinding":
       case "Import":
       case "ExportFrom":

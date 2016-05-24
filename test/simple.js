@@ -227,7 +227,7 @@ describe("Code generator", function () {
       test("({a})");
     });
 
-    it("ArrayBinding", function () {
+    it("ArrayAssignmentTarget", function () {
       test("[]=0");
       test("[...a]=0");
       test("[a,...a]=0");
@@ -236,17 +236,39 @@ describe("Code generator", function () {
       test("[,...a]=0");
     });
 
-    it("BindingPropertyIdentifier", function () {
+    it("AssignmentTargetPropertyIdentifier", function () {
       test("({a=0}=0)");
     });
 
-    it("BindingPropertyProperty", function () {
+    it("AssignmentTargetPropertyProperty", function () {
       test("({a:b}=0)");
     });
 
-    it("BindingWithDefault", function () {
+    it("AssignmentTargetWithDefault", function () {
       test("[a=0]=0");
       test("({a:b=0}=0)");
+    });
+
+    it("ArrayBinding", function () {
+      test("let[]=0");
+      test("let[...a]=0");
+      test("let[a,...b]=0");
+      test("let[a,b=0,...c]=0");
+      test("let[,,]=0");
+      test("let[,...a]=0");
+    });
+
+    it("BindingPropertyIdentifier", function () {
+      test("let{a=0}=0");
+    });
+
+    it("BindingPropertyProperty", function () {
+      test("let{a:b}=0");
+    });
+
+    it("BindingWithDefault", function () {
+      test("let[a=0]=0");
+      test("let{a:b=0}=0");
     });
 
     it("ClassDeclaration", function () {
@@ -294,6 +316,7 @@ describe("Code generator", function () {
       test("a+=b");
       test("a*=b");
       test("a%=b");
+      test("a**=b");
       test("a<<=b");
       test("a>>=b");
       test("a>>>=b");
@@ -457,9 +480,9 @@ describe("Code generator", function () {
     it("LiteralRegExpExpression", function () {
       test("/a/");
       test("/a/i");
-      test("/a/ig");
-      test("/a\\s/ig");
-      test("/a\\r/ig");
+      test("/a/gi");
+      test("/a\\s/gi");
+      test("/a\\r/gi");
       test("/a\\r/ instanceof 3");
       test("/a\\r/g instanceof 3");
     });
@@ -494,6 +517,7 @@ describe("Code generator", function () {
       test("()=>a");
       test2("a=>a", "(a)=>a");
       test("(...a)=>a");
+      test("(...[])=>0");
       test("(a,...b)=>a");
       test("(a=0)=>a");
       test("(a,b)=>a");
@@ -823,11 +847,16 @@ describe("Code generator", function () {
     it("ExportFrom", function () {
       test("export{}from\"m\"");
       test("export{}from\"m\";0");
-      test("let a;export{a}from\"m\"");
-      test("let a,b;export{a,b}from\"m\"");
+      test("export{a}from\"m\"");
+      test("export{a as b}from\"m\"");
+      test("export{a,b}from\"m\"");
+    });
+
+    it("ExportLocals", function () {
       test("export{}");
       test("export{};0");
       test("let a;export{a}");
+      test("let a;export{a as b}");
       test("let a,b;export{a,b}");
     });
 

@@ -92,6 +92,18 @@ export default class MinimalCodeGen {
     return objectAssign(seq(leftCode, t("="), rightCode), {containsIn, startsWithCurly, startsWithLetSquareBracket, startsWithFunctionOrClass});
   }
 
+  reduceAssignmentTargetIdentifier(node) {
+    let a = t(node.name);
+    if (node.name === "let") {
+      a.startsWithLet = true;
+    }
+    return a;
+  }
+
+  reduceAssignmentTargetWithDefault(node, {binding, init}) {
+    return seq(binding, t("="), init);
+  }
+
   reduceCompoundAssignmentExpression(node, {binding, expression}) {
     let leftCode = binding;
     let rightCode = expression;
@@ -149,12 +161,12 @@ export default class MinimalCodeGen {
     return a;
   }
 
-  reduceArrayBinding(node, {elements, restElement}) {
+  reduceArrayAssignmentTarget(node, {elements, rest}) {
     let content;
     if (elements.length === 0) {
-      content = restElement == null ? empty() : seq(t("..."), restElement);
+      content = rest == null ? empty() : seq(t("..."), rest);
     } else {
-      elements = elements.concat(restElement == null ? [] : [seq(t("..."), restElement)]);
+      elements = elements.concat(rest == null ? [] : [seq(t("..."), rest)]);
       content = commaSep(elements.map(getAssignmentExpr));
       if (elements.length > 0 && elements[elements.length - 1] == null) {
         content = seq(content, t(","));
@@ -163,10 +175,39 @@ export default class MinimalCodeGen {
     return bracket(content);
   }
 
+  reduceArrayBinding(node, {elements, rest}) {
+    let content;
+    if (elements.length === 0) {
+      content = rest == null ? empty() : seq(t("..."), rest);
+    } else {
+      elements = elements.concat(rest == null ? [] : [seq(t("..."), rest)]);
+      content = commaSep(elements.map(getAssignmentExpr));
+      if (elements.length > 0 && elements[elements.length - 1] == null) {
+        content = seq(content, t(","));
+      }
+    }
+    return bracket(content);
+  }
+
+  reduceObjectAssignmentTarget(node, {properties}) {
+    let state = brace(commaSep(properties));
+    state.startsWithCurly = true;
+    return state;
+  }
+
   reduceObjectBinding(node, {properties}) {
     let state = brace(commaSep(properties));
     state.startsWithCurly = true;
     return state;
+  }
+
+  reduceAssignmentTargetPropertyIdentifier(node, {binding, init}) {
+    if (node.init == null) return binding;
+    return seq(binding, t("="), init);
+  }
+
+  reduceAssignmentTargetPropertyProperty(node, {name, binding}) {
+    return seq(name, t(":"), binding);
   }
 
   reduceBindingPropertyIdentifier(node, {binding, init}) {
@@ -230,6 +271,21 @@ export default class MinimalCodeGen {
   reduceClassElement(node, {method}) {
     if (!node.isStatic) return method;
     return seq(t("static"), method);
+  }
+
+  reduceComputedMemberAssignmentTarget(node, {object, expression}) {
+    let startsWithLetSquareBracket =
+      object.startsWithLetSquareBracket ||
+      node.object.type === "IdentifierExpression" && node.object.name === "let";
+    return objectAssign(
+      seq(p(node.object, getPrecedence(node), object), bracket(expression)),
+      {
+        startsWithLet: object.startsWithLet,
+        startsWithLetSquareBracket,
+        startsWithCurly: object.startsWithCurly,
+        startsWithFunctionOrClass: object.startsWithFunctionOrClass,
+      }
+    );
   }
 
   reduceComputedMemberExpression(node, {object, expression}) {
@@ -302,7 +358,7 @@ export default class MinimalCodeGen {
       case "VariableDeclaration":
         leftP = noIn(markContainsIn(left));
         break;
-      case "BindingIdentifier":
+      case "AssignmentTargetIdentifier":
         if (node.left.name === "let") {
           leftP = paren(left);
         }
@@ -422,7 +478,11 @@ export default class MinimalCodeGen {
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(t("export"), brace(commaSep(namedExports)), node.moduleSpecifier == null ? empty() : seq(t("from"), t(escapeStringLiteral(node.moduleSpecifier))), semiOp());
+    return seq(t("export"), brace(commaSep(namedExports)), t("from"), t(escapeStringLiteral(node.moduleSpecifier)), semiOp());
+  }
+
+  reduceExportLocals(node, {namedExports}) {
+    return seq(t("export"), brace(commaSep(namedExports)), semiOp());
   }
 
   reduceExport(node, {declaration}) {
@@ -448,9 +508,14 @@ export default class MinimalCodeGen {
     return seq(t("export default"), body);
   }
 
-  reduceExportSpecifier(node) {
-    if (node.name == null) return t(node.exportedName);
+  reduceExportFromSpecifier(node) {
+    if (node.exportedName == null) return t(node.name);
     return seq(t(node.name), t("as"), t(node.exportedName));
+  }
+
+  reduceExportLocalSpecifier(node, {name}) {
+    if (node.exportedName == null) return name;
+    return seq(name, t("as"), t(node.exportedName));
   }
 
   reduceLabeledStatement(node, {label, body}) {
@@ -474,7 +539,7 @@ export default class MinimalCodeGen {
   }
 
   reduceLiteralRegExpExpression(node) {
-    return t(`/${node.pattern}/${node.flags}`);
+    return t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`);
   }
 
   reduceLiteralStringExpression(node) {
@@ -542,8 +607,17 @@ export default class MinimalCodeGen {
     return seq(t("set"), name, paren(param), brace(body));
   }
 
-  reduceShorthandProperty(node) {
-    return t(node.name);
+  reduceShorthandProperty(node, {name}) {
+    return name;
+  }
+
+  reduceStaticMemberAssignmentTarget(node, {object, property}) {
+    const state = seq(p(node.object, getPrecedence(node), object), t("."), t(property));
+    state.startsWithLet = object.startsWithLet;
+    state.startsWithCurly = object.startsWithCurly;
+    state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;
+    state.startsWithFunctionOrClass = object.startsWithFunctionOrClass;
+    return state;
   }
 
   reduceStaticMemberExpression(node, {object, property}) {
