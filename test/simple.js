@@ -630,7 +630,7 @@ describe("Code generator", function () {
       test2("(\"'\")", "('\\'')");
       test("(\"a\")");
       test("('\"')");
-      test("(\"\\b\\n\\r\\t\\v\\f\\\\\\\"'\\u2028\\u2029日本\")");
+      test("(\"\b\\n\\r\t\v\f\\\\\\\"'\\u2028\\u2029日本\")");
     });
 
     it("BlockStatement", function () {
