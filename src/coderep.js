@@ -134,20 +134,8 @@ export function escapeStringLiteral(stringValue) {
       case delim:
         result += "\\" + delim;
         break;
-      case "\b":
-        result += "\\b";
-        break;
-      case "\t":
-        result += "\\t";
-        break;
       case "\n":
         result += "\\n";
-        break;
-      case "\u000B":
-        result += "\\v";
-        break;
-      case "\u000C":
-        result += "\\f";
         break;
       case "\r":
         result += "\\r";
