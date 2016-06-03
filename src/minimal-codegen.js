@@ -630,10 +630,11 @@ export default class MinimalCodeGen {
   }
 
   reduceStaticPropertyName(node) {
-    var n;
     if (keyword.isIdentifierNameES6(node.value)) {
       return t(node.value);
-    } else if (n = parseFloat(node.value), n === n) {
+    }
+    let n = parseFloat(node.value);
+    if (n >= 0 && n.toString() === node.value) {
       return new NumberCodeRep(n);
     }
     return t(escapeStringLiteral(node.value));
