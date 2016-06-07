@@ -915,6 +915,9 @@ describe("Code generator", function () {
       test("a;a");
     });
 
+    it("ComputedMemberAssignmentTarget", function () {
+      test("(a.b++)[0]=1");
+    });
   });
 });
 

@@ -79,6 +79,8 @@ export function getPrecedence(node) {
 
     case "ComputedMemberExpression":
     case "StaticMemberExpression":
+    case "ComputedMemberAssignmentTarget":
+    case "StaticMemberAssignmentTarget":
       switch (node.object.type) {
         case "CallExpression":
         case "ComputedMemberExpression":
