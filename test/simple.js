@@ -625,6 +625,7 @@ describe("Code generator", function () {
       test("1");
       test("2");
       test("0x38D7EA4C68001");
+      test("0x38D7EA4C68001.valueOf()");
       test2("15e5", "1500000");
       test2("155e3", "155000");
       test(".1");

@@ -17,7 +17,7 @@
 import {code} from "esutils";
 
 function numberDot(fragment) {
-  if (fragment.indexOf(".") < 0 && fragment.indexOf("e") < 0) {
+  if (fragment.indexOf(".") < 0 && fragment.indexOf("e") < 0 && fragment.indexOf("x") < 0) {
     return "..";
   }
   return ".";
