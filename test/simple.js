@@ -616,6 +616,7 @@ describe("Code generator", function () {
       testScript("for((let.a)of b);");
       testScript("for((let[a])of b);");
       test2Script("for((let.a)of b);", "for((let).a of b);");
+      test("for(a of(b,c));");
     });
 
     it("LiteralNumericExpression", function () {

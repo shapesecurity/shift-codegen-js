@@ -702,7 +702,7 @@ export class ExtensibleCodeGen {
   reduceForOfStatement(node, {left, right, body}) {
     left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
     return objectAssign(
-      seq(this.t("for"), this.sep(Sep.AFTER_FOROF_FOR), this.paren(seq(left.startsWithLet ? this.paren(left, Sep.FOR_OF_LET_PAREN_BEFORE, Sep.FOR_OF_LET_PAREN_AFTER) : left, this.sep(Sep.BEFORE_FOROF_OF), this.t("of"), this.sep(Sep.AFTER_FOROF_FOR), right), Sep.FOR_OF_PAREN_BEFORE, Sep.FOR_OF_PAREN_AFTER), this.sep(Sep.BEFORE_FOROF_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
+      seq(this.t("for"), this.sep(Sep.AFTER_FOROF_FOR), this.paren(seq(left.startsWithLet ? this.paren(left, Sep.FOR_OF_LET_PAREN_BEFORE, Sep.FOR_OF_LET_PAREN_AFTER) : left, this.sep(Sep.BEFORE_FOROF_OF), this.t("of"), this.sep(Sep.AFTER_FOROF_FOR), this.p(node.right, Precedence.Assignment, right)), Sep.FOR_OF_PAREN_BEFORE, Sep.FOR_OF_PAREN_AFTER), this.sep(Sep.BEFORE_FOROF_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 

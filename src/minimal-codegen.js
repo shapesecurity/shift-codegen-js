@@ -372,7 +372,7 @@ export default class MinimalCodeGen {
   reduceForOfStatement(node, {left, right, body}) {
     left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
     return objectAssign(
-      seq(t("for"), paren(seq(left.startsWithLet ? paren(left) : left, t("of"), right)), body),
+      seq(t("for"), paren(seq(left.startsWithLet ? paren(left) : left, t("of"), p(node.right, Precedence.Assignment, right))), body),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
