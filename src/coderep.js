@@ -14,13 +14,14 @@ const Precedence = {
   BitwiseSHIFT: 10,
   Additive: 11,
   Multiplicative: 12,
-  Prefix: 13,
-  Postfix: 14,
-  New: 15,
-  Call: 16,
-  TaggedTemplate: 17,
-  Member: 18,
-  Primary: 19
+  Exponential: 13,
+  Prefix: 14,
+  Postfix: 15,
+  New: 16,
+  Call: 17,
+  TaggedTemplate: 18,
+  Member: 19,
+  Primary: 20
 };
 
 export {Precedence};
@@ -49,7 +50,8 @@ const BinaryPrecedence = {
   "-": Precedence.Additive,
   "*": Precedence.Multiplicative,
   "%": Precedence.Multiplicative,
-  "/": Precedence.Multiplicative
+  "/": Precedence.Multiplicative,
+  "**": Precedence.Exponential
 };
 
 export function getPrecedence(node) {
