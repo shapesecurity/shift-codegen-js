@@ -82,7 +82,7 @@ export class TokenStream {
         ((lastChar == "+" || lastChar == "-") &&
         lastChar == rightChar ||
         code.isIdentifierPartES6(lastChar.charCodeAt(0)) && code.isIdentifierPartES6(rightChar.charCodeAt(0)) ||
-        lastChar == "/" && rightChar == "i")) {
+        lastChar == "/" && (rightChar == "i" || rightChar == "/"))) {
       this.result += " ";
     }
 

@@ -491,6 +491,7 @@ describe("Code generator", function () {
     });
 
     it("LiteralRegExpExpression", function () {
+      test("a/ /b/");
       test("/a/");
       test("/a/i");
       test("/a/gi");
