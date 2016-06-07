@@ -68,7 +68,6 @@ describe("API", function () {
 
 });
 
-/*
 describe("everything.js", function () {
   it("should round trip", function () {
     var source;
@@ -80,7 +79,6 @@ describe("everything.js", function () {
     expect(parseScript(codeGen(parseScript(source)))).eql(parseScript(source));
   });
 });
-*/
 
 describe("Code generator", function () {
 
@@ -247,6 +245,11 @@ describe("Code generator", function () {
       test("[a,a=0,...a]=0");
       test("[,,]=0");
       test("[,...a]=0");
+      test("[a=(0,0)]=0");
+    });
+
+    it("ObjectAssignmentTarget", function () {
+      test("({a=(0,0)}=0)");
     });
 
     it("AssignmentTargetPropertyIdentifier", function () {
@@ -269,6 +272,11 @@ describe("Code generator", function () {
       test("let[a,b=0,...c]=0");
       test("let[,,]=0");
       test("let[,...a]=0");
+      test("let[a=(0,0)]=0");
+    });
+
+    it("ObjectBinding", function () {
+      test("let{a=(0,0)}=0");
     });
 
     it("BindingPropertyIdentifier", function () {
@@ -546,6 +554,7 @@ describe("Code generator", function () {
       test("()=>class{}");
       test("()=>(1,2)");
       test("(()=>0)()");
+      test("(a=(0,0))=>0");
     });
 
     it("NewTargetExpression", function () {
@@ -902,6 +911,7 @@ describe("Code generator", function () {
       test("export default(class{})");
       test("export default(function(){})");
       test("export default{}");
+      test("export default(0,0)");
     });
 
     it("ExportSpecifier", function () {
@@ -920,6 +930,10 @@ describe("Code generator", function () {
 
     it("ComputedMemberAssignmentTarget", function () {
       test("(a.b++)[0]=1");
+    });
+
+    it("ComputedPropertyName", function () {
+      test("({[(0,0)]:0})");
     });
   });
 });

@@ -101,7 +101,7 @@ export default class MinimalCodeGen {
   }
 
   reduceAssignmentTargetWithDefault(node, {binding, init}) {
-    return seq(binding, t("="), init);
+    return seq(binding, t("="), p(node.init, Precedence.Assignment, init));
   }
 
   reduceCompoundAssignmentExpression(node, {binding, expression}) {
@@ -150,7 +150,7 @@ export default class MinimalCodeGen {
   }
 
   reduceBindingWithDefault(node, {binding, init}) {
-    return seq(binding, t("="), init);
+    return seq(binding, t("="), p(node.init, Precedence.Assignment, init));
   }
 
   reduceBindingIdentifier(node) {
@@ -203,7 +203,7 @@ export default class MinimalCodeGen {
 
   reduceAssignmentTargetPropertyIdentifier(node, {binding, init}) {
     if (node.init == null) return binding;
-    return seq(binding, t("="), init);
+    return seq(binding, t("="), p(node.init, Precedence.Assignment, init));
   }
 
   reduceAssignmentTargetPropertyProperty(node, {name, binding}) {
@@ -212,7 +212,7 @@ export default class MinimalCodeGen {
 
   reduceBindingPropertyIdentifier(node, {binding, init}) {
     if (node.init == null) return binding;
-    return seq(binding, t("="), init);
+    return seq(binding, t("="), p(node.init, Precedence.Assignment, init));
   }
 
   reduceBindingPropertyProperty(node, {name, binding}) {
@@ -304,7 +304,7 @@ export default class MinimalCodeGen {
   }
 
   reduceComputedPropertyName(node, {expression}) {
-    return bracket(expression);
+    return bracket(p(node.expression, Precedence.Assignment, expression));
   }
 
   reduceConditionalExpression(node, {test, consequent, alternate}) {
@@ -501,11 +501,10 @@ export default class MinimalCodeGen {
     switch (node.body.type) {
       case "FunctionDeclaration":
       case "ClassDeclaration":
-        break;
+        return seq(t("export default"), body);
       default:
-        body = seq(body, semiOp());
+        return seq(t("export default"), p(node.body, Precedence.Assignment, body), semiOp());
     }
-    return seq(t("export default"), body);
   }
 
   reduceExportFromSpecifier(node) {

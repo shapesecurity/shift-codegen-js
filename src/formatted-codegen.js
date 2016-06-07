@@ -430,7 +430,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceAssignmentTargetWithDefault(node, {binding, init}) {
-    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), init);
+    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), this.p(node.init, Precedence.Assignment, init));
   }
 
   reduceCompoundAssignmentExpression(node, {binding, expression}) {
@@ -479,7 +479,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceBindingWithDefault(node, {binding, init}) {
-    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), init);
+    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), this.p(node.init, Precedence.Assignment, init));
   }
 
   reduceBindingIdentifier(node) {
@@ -532,7 +532,7 @@ export class ExtensibleCodeGen {
 
   reduceAssignmentTargetPropertyIdentifier(node, {binding, init}) {
     if (node.init == null) return binding;
-    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), init);
+    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), this.p(node.init, Precedence.Assignment, init));
   }
 
   reduceAssignmentTargetPropertyProperty(node, {name, binding}) {
@@ -541,7 +541,7 @@ export class ExtensibleCodeGen {
 
   reduceBindingPropertyIdentifier(node, {binding, init}) {
     if (node.init == null) return binding;
-    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), init);
+    return seq(binding, this.sep(Sep.BEFORE_DEFAULT_EQUALS), this.t("="), this.sep(Sep.AFTER_DEFAULT_EQUALS), this.p(node.init, Precedence.Assignment, init));
   }
 
   reduceBindingPropertyProperty(node, {name, binding}) {
@@ -634,7 +634,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceComputedPropertyName(node, {expression}) {
-    return this.bracket(expression, Sep.COMPUTED_PROPERTY_BRACKET_INTIAL, Sep.COMPUTED_PROPERTY_BRACKET_FINAL);
+    return this.bracket(this.p(node.expression, Precedence.Assignment, expression), Sep.COMPUTED_PROPERTY_BRACKET_INTIAL, Sep.COMPUTED_PROPERTY_BRACKET_FINAL);
   }
 
   reduceConditionalExpression(node, {test, consequent, alternate}) {
@@ -834,11 +834,10 @@ export class ExtensibleCodeGen {
     switch (node.body.type) {
       case "FunctionDeclaration":
       case "ClassDeclaration":
-        break;
+        return seq(this.t("export"), this.sep(Sep.EXPORT_DEFAULT), this.t("default"), this.sep(Sep.AFTER_EXPORT_DEFAULT), body);
       default:
-        body = seq(body, this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+        return seq(this.t("export"), this.sep(Sep.EXPORT_DEFAULT), this.t("default"), this.sep(Sep.AFTER_EXPORT_DEFAULT), this.p(node.body, Precedence.Assignment, body), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
     }
-    return seq(this.t("export"), this.sep(Sep.EXPORT_DEFAULT), this.t("default"), this.sep(Sep.AFTER_EXPORT_DEFAULT), body);
   }
 
   reduceExportFromSpecifier(node) {
