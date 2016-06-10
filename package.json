@@ -1,6 +1,6 @@
 {
   "name": "shift-codegen",
-  "version": "4.0.4",
+  "version": "5.0.0",
   "description": "code generator for Shift format ASTs",
   "author": "Shape Security Labs",
   "homepage": "https://github.com/shapesecurity/shift-codegen-js",
@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "esutils": "^2.0.2",
-    "object-assign": "^3.0.0",
-    "shift-reducer": "^3.0.2"
+    "object-assign": "^4.1.0",
+    "shift-reducer": "^4.0.0"
   },
   "devDependencies": {
     "babel-cli": "6.3.13",
@@ -31,7 +31,7 @@
     "everything.js": "^1.0.3",
     "expect.js": "0.3.1",
     "mocha": "2.2.5",
-    "shift-parser": "4.1.2"
+    "shift-parser": "5.0.0"
   },
   "keywords": [
     "Shift",
