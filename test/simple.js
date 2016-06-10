@@ -181,6 +181,7 @@ describe("Code generator", function () {
       testShift("'\\\\\"'",
         { type: "Script", directives: [{ type: "Directive", rawValue: "\\\\\"" }], statements: [] }
       );
+      test("\"\\\n'\"");
     });
 
     it("ArrayExpression", function () {

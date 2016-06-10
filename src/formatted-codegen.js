@@ -1049,7 +1049,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceDirective(node) {
-    let delim = /^(?:[^"\\]|\\.)*$/.test(node.rawValue) ? "\"" : "'";
+    let delim = node.rawValue.match(/(^|[^\\])(\\\\)*"/) ? "'" : '"';
     return seq(this.t(delim + node.rawValue + delim), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
