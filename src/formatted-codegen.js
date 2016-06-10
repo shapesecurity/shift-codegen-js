@@ -114,7 +114,8 @@ const separatorNames = [
   "BEFORE_EXPORT_STAR",
   "AFTER_EXPORT_STAR",
   "BEFORE_EXPORT_BINDINGS",
-  "AFTER_EXPORT_BINDINGS",
+  "AFTER_EXPORT_FROM_BINDINGS",
+  "AFTER_EXPORT_LOCAL_BINDINGS",
   "AFTER_EXPORT",
   "EXPORT_DEFAULT",
   "AFTER_EXPORT_DEFAULT",
@@ -811,11 +812,11 @@ export class ExtensibleCodeGen {
   }
 
   reduceExportFrom(node, {namedExports}) {
-    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), this.sep(Sep.AFTER_EXPORT_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), this.sep(Sep.AFTER_EXPORT_FROM_BINDINGS), this.t("from"), this.sep(Sep.AFTER_FROM), this.t(escapeStringLiteral(node.moduleSpecifier)), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceExportLocals(node, {namedExports}) {
-    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), this.sep(Sep.AFTER_EXPORT_BINDINGS), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(this.t("export"), this.sep(Sep.BEFORE_EXPORT_BINDINGS), this.brace(this.commaSep(namedExports, Sep.EXPORTS_BEFORE_COMMA, Sep.EXPORTS_AFTER_COMMA), node, Sep.EXPORT_BRACE_INITIAL, Sep.EXPORT_BRACE_FINAL, Sep.EXPORT_BRACE_EMPTY), this.sep(Sep.AFTER_EXPORT_LOCAL_BINDINGS), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceExport(node, {declaration}) {
@@ -1152,6 +1153,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case "ObjectBinding":
       case "Import":
       case "ExportFrom":
+      case "ExportLocals":
       case "ObjectExpression":
         return new Brace(rep);
     }
@@ -1256,7 +1258,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case "BEFORE_EXPORT_STAR":
       case "AFTER_EXPORT_STAR":
       case "BEFORE_EXPORT_BINDINGS":
-      case "AFTER_EXPORT_BINDINGS":
+      case "AFTER_EXPORT_FROM_BINDINGS":
       case "AFTER_EXPORT":
       case "AFTER_EXPORT_DEFAULT":
       case "BEFORE_EXPORT_AS":

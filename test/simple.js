@@ -1023,6 +1023,11 @@ describe("Pretty code generator", function () {
   it("should print directives with linebreaks", function () {
     testPretty("\"use strict\";\n!function () {\n  \"use strict\";\n};\n", true);
   });
+
+  it("should pretty-print exports", function () {
+    testPretty("export {a} from \"b\";\n");
+    testPretty("let a;\nexport {a};\n");
+  });
 });
 
 describe("CodeRep", function(){
