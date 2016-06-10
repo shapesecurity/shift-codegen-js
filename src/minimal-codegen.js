@@ -227,8 +227,8 @@ export default class MinimalCodeGen {
     return block;
   }
 
-  reduceBreakStatement(node, {label}) {
-    return seq(t("break"), label ? t(label) : empty(), semiOp());
+  reduceBreakStatement(node) {
+    return seq(t("break"), node.label ? t(node.label) : empty(), semiOp());
   }
 
   reduceCallExpression(node, {callee, arguments: args}) {
@@ -324,8 +324,8 @@ export default class MinimalCodeGen {
         });
   }
 
-  reduceContinueStatement(node, {label}) {
-    return seq(t("continue"), label ? t(label) : empty(), semiOp());
+  reduceContinueStatement(node) {
+    return seq(t("continue"), node.label ? t(node.label) : empty(), semiOp());
   }
 
   reduceDataProperty(node, {name, expression}) {
@@ -517,8 +517,8 @@ export default class MinimalCodeGen {
     return seq(name, t("as"), t(node.exportedName));
   }
 
-  reduceLabeledStatement(node, {label, body}) {
-    return objectAssign(seq(t(label + ":"), body), {endsWithMissingElse: body.endsWithMissingElse});
+  reduceLabeledStatement(node, {body}) {
+    return objectAssign(seq(t(node.label + ":"), body), {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceLiteralBooleanExpression(node) {
@@ -610,8 +610,8 @@ export default class MinimalCodeGen {
     return name;
   }
 
-  reduceStaticMemberAssignmentTarget(node, {object, property}) {
-    const state = seq(p(node.object, getPrecedence(node), object), t("."), t(property));
+  reduceStaticMemberAssignmentTarget(node, {object}) {
+    const state = seq(p(node.object, getPrecedence(node), object), t("."), t(node.property));
     state.startsWithLet = object.startsWithLet;
     state.startsWithCurly = object.startsWithCurly;
     state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;
@@ -619,8 +619,8 @@ export default class MinimalCodeGen {
     return state;
   }
 
-  reduceStaticMemberExpression(node, {object, property}) {
-    const state = seq(p(node.object, getPrecedence(node), object), t("."), t(property));
+  reduceStaticMemberExpression(node, {object}) {
+    const state = seq(p(node.object, getPrecedence(node), object), t("."), t(node.property));
     state.startsWithLet = object.startsWithLet;
     state.startsWithCurly = object.startsWithCurly;
     state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;

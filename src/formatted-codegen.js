@@ -556,8 +556,8 @@ export class ExtensibleCodeGen {
     return seq(block, this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
-  reduceBreakStatement(node, {label}) {
-    return seq(this.t("break"), label ? seq(this.sep(Sep.BEFORE_JUMP_LABEL), this.t(label)) : empty(), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+  reduceBreakStatement(node) {
+    return seq(this.t("break"), node.label ? seq(this.sep(Sep.BEFORE_JUMP_LABEL), this.t(node.label)) : empty(), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceCallExpression(node, {callee, arguments: args}) {
@@ -654,8 +654,8 @@ export class ExtensibleCodeGen {
         });
   }
 
-  reduceContinueStatement(node, {label}) {
-    return seq(this.t("continue"), label ? seq(this.sep(Sep.BEFORE_JUMP_LABEL), this.t(label)) : empty(), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
+  reduceContinueStatement(node) {
+    return seq(this.t("continue"), node.label ? seq(this.sep(Sep.BEFORE_JUMP_LABEL), this.t(node.label)) : empty(), this.semiOp(), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceDataProperty(node, {name, expression}) {
@@ -850,8 +850,8 @@ export class ExtensibleCodeGen {
     return seq(name, this.sep(Sep.BEFORE_EXPORT_AS), this.t("as"), this.sep(Sep.AFTER_EXPORT_AS), this.t(node.exportedName));
   }
 
-  reduceLabeledStatement(node, {label, body}) {
-    return objectAssign(seq(this.t(label), this.sep(Sep.BEFORE_LABEL_COLON), this.t(":"), this.sep(Sep.AFTER_LABEL_COLON), body), {endsWithMissingElse: body.endsWithMissingElse});
+  reduceLabeledStatement(node, {body}) {
+    return objectAssign(seq(this.t(node.label), this.sep(Sep.BEFORE_LABEL_COLON), this.t(":"), this.sep(Sep.AFTER_LABEL_COLON), body), {endsWithMissingElse: body.endsWithMissingElse});
   }
 
   reduceLiteralBooleanExpression(node) {
@@ -943,8 +943,8 @@ export class ExtensibleCodeGen {
     return name;
   }
 
-  reduceStaticMemberAssignmentTarget(node, {object, property}) {
-    const state = seq(this.p(node.object, getPrecedence(node), object), this.sep(Sep.BEFORE_STATIC_MEMBER_ASSIGNMENT_TARGET_DOT), this.t("."), this.sep(Sep.AFTER_STATIC_MEMBER_ASSIGNMENT_TARGET_DOT), this.t(property));
+  reduceStaticMemberAssignmentTarget(node, {object}) {
+    const state = seq(this.p(node.object, getPrecedence(node), object), this.sep(Sep.BEFORE_STATIC_MEMBER_ASSIGNMENT_TARGET_DOT), this.t("."), this.sep(Sep.AFTER_STATIC_MEMBER_ASSIGNMENT_TARGET_DOT), this.t(node.property));
     state.startsWithLet = object.startsWithLet;
     state.startsWithCurly = object.startsWithCurly;
     state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;
@@ -952,8 +952,8 @@ export class ExtensibleCodeGen {
     return state;
   }
 
-  reduceStaticMemberExpression(node, {object, property}) {
-    const state = seq(this.p(node.object, getPrecedence(node), object), this.sep(Sep.BEFORE_STATIC_MEMBER_DOT), this.t("."), this.sep(Sep.AFTER_STATIC_MEMBER_DOT), this.t(property));
+  reduceStaticMemberExpression(node, {object}) {
+    const state = seq(this.p(node.object, getPrecedence(node), object), this.sep(Sep.BEFORE_STATIC_MEMBER_DOT), this.t("."), this.sep(Sep.AFTER_STATIC_MEMBER_DOT), this.t(node.property));
     state.startsWithLet = object.startsWithLet;
     state.startsWithCurly = object.startsWithCurly;
     state.startsWithLetSquareBracket = object.startsWithLetSquareBracket;
