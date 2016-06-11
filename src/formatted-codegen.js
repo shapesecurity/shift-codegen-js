@@ -743,12 +743,15 @@ export class ExtensibleCodeGen {
     if (node.params.rest != null || node.params.items.length !== 1 || node.params.items[0].type !== "BindingIdentifier") {
       params = this.paren(params, Sep.ARROW_PARAMETERS_PAREN_BEFORE, Sep.ARROW_PARAMETERS_PAREN_AFTER, Sep.ARROW_PARAMETERS_PAREN_EMPTY);
     }
+    let containsIn = false;
     if (node.body.type === "FunctionBody") {
       body = this.brace(body, node, Sep.ARROW_BRACE_INITIAL, Sep.ARROW_BRACE_FINAL, Sep.ARROW_BRACE_EMPTY);
     } else if (body.startsWithCurly) {
       body = this.paren(body, Sep.ARROW_BODY_PAREN_BEFORE, Sep.ARROW_BODY_PAREN_AFTER);
+    } else if (body.containsIn) {
+      containsIn = true;
     }
-    return seq(params, this.sep(Sep.BEFORE_ARROW), this.t("=>"), this.sep(Sep.AFTER_ARROW), this.p(node.body, Precedence.Assignment, body));
+    return objectAssign(seq(params, this.sep(Sep.BEFORE_ARROW), this.t("=>"), this.sep(Sep.AFTER_ARROW), this.p(node.body, Precedence.Assignment, body)), {containsIn});
   }
 
   reduceGetter(node, {name, body}) {
