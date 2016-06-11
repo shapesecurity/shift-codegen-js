@@ -743,6 +743,7 @@ describe("Code generator", function () {
     it("ForStatement", function () {
       test("for(var i=(1 in[]);;);");
       test("for(var i=(1 in[]),b,c=(1 in[]);;);");
+      test("for(var a=(b=>c in 0);;);");
       test("for((1 in[]);;);");
       test("for(1*(1 in[]);;);");
       test("for(1*(1+1 in[]);;);");

@@ -412,12 +412,15 @@ export default class MinimalCodeGen {
     if (node.params.rest != null || node.params.items.length !== 1 || node.params.items[0].type !== "BindingIdentifier") {
       params = paren(params);
     }
+    let containsIn = false;
     if (node.body.type === "FunctionBody") {
       body = brace(body);
     } else if (body.startsWithCurly) {
       body = paren(body);
+    } else if (body.containsIn) {
+      containsIn = true;
     }
-    return seq(params, t("=>"), p(node.body, Precedence.Assignment, body));
+    return objectAssign(seq(params, t("=>"), p(node.body, Precedence.Assignment, body)), {containsIn});
   }
 
   reduceGetter(node, {name, body}) {
