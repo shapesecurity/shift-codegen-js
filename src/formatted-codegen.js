@@ -1045,7 +1045,7 @@ export class ExtensibleCodeGen {
 
   reduceYieldExpression(node, {expression}) {
     if (node.expression == null) return this.t("yield");
-    return seq(this.t("yield"), this.sep(Sep.YIELD), this.p(node.expression, getPrecedence(node), expression));
+    return objectAssign(seq(this.t("yield"), this.sep(Sep.YIELD), this.p(node.expression, getPrecedence(node), expression)), {containsIn: expression.containsIn});
   }
 
   reduceYieldGeneratorExpression(node, {expression}) {
