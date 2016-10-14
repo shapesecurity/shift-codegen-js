@@ -47,6 +47,7 @@ export class TokenStream {
     this.lastNumber = null;
     this.lastChar = null;
     this.optionalSemi = false;
+    this.previousWasRegExp = false;
   }
 
   putNumber(number) {
@@ -59,7 +60,7 @@ export class TokenStream {
     this.optionalSemi = true;
   }
 
-  put(tokenStr) {
+  put(tokenStr, isRegExp) {
     if (this.optionalSemi) {
       this.optionalSemi = false;
       if (tokenStr !== "}") {
@@ -78,11 +79,14 @@ export class TokenStream {
     let rightChar = tokenStr.charAt(0);
     let lastChar = this.lastChar;
     this.lastChar = tokenStr.charAt(tokenStr.length - 1);
+    let previousWasRegExp = this.previousWasRegExp;
+    this.previousWasRegExp = isRegExp;
     if (lastChar &&
         ((lastChar == "+" || lastChar == "-") &&
         lastChar == rightChar ||
         code.isIdentifierPartES6(lastChar.charCodeAt(0)) && code.isIdentifierPartES6(rightChar.charCodeAt(0)) ||
-        lastChar == "/" && (rightChar == "i" || rightChar == "/"))) {
+        lastChar == "/" && rightChar == "/" ||
+        previousWasRegExp && rightChar == "i")) {
       this.result += " ";
     }
 

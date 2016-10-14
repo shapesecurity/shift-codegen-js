@@ -450,6 +450,8 @@ describe("Code generator", function () {
       test("(a+b)%c");
       test("!a*b");
       test("a*(b+c)");
+
+      test("a/i");
     });
 
     it("PrefixExpression", function () {
@@ -508,6 +510,7 @@ describe("Code generator", function () {
       test("/a\\r/gi");
       test("/a\\r/ instanceof 3");
       test("/a\\r/g instanceof 3");
+      test("/a/ in 0");
     });
 
     it("LiteralBooleanExpression", function () {
