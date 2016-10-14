@@ -1049,7 +1049,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceYieldGeneratorExpression(node, {expression}) {
-    return seq(this.t("yield"), this.sep(Sep.BEFORE_YIELD_STAR), this.t("*"), this.sep(Sep.AFTER_YIELD_STAR), this.p(node.expression, getPrecedence(node), expression));
+    return objectAssign(seq(this.t("yield"), this.sep(Sep.BEFORE_YIELD_STAR), this.t("*"), this.sep(Sep.AFTER_YIELD_STAR), this.p(node.expression, getPrecedence(node), expression)), {containsIn: expression.containsIn});
   }
 
   reduceDirective(node) {
