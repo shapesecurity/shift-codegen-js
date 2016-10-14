@@ -6,8 +6,8 @@ function p(node, precedence, a) {
   return getPrecedence(node) < precedence ? paren(a) : a;
 }
 
-function t(token) {
-  return new Token(token);
+function t(token, isRegExp = false) {
+  return new Token(token, isRegExp);
 }
 
 function paren(rep) {
@@ -541,7 +541,7 @@ export default class MinimalCodeGen {
   }
 
   reduceLiteralRegExpExpression(node) {
-    return t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`);
+    return t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`, true);
   }
 
   reduceLiteralStringExpression(node) {

@@ -338,8 +338,8 @@ export class ExtensibleCodeGen {
     return original;
   }
 
-  t(token) {
-    return new Token(token);
+  t(token, isRegExp = false) {
+    return new Token(token, isRegExp);
   }
 
   p(node, precedence, a) {
@@ -875,7 +875,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceLiteralRegExpExpression(node) {
-    return this.t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`);
+    return this.t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`, true);
   }
 
   reduceLiteralStringExpression(node) {

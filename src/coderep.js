@@ -189,13 +189,14 @@ export class Empty extends CodeRep {
 }
 
 export class Token extends CodeRep {
-  constructor(token) {
+  constructor(token, isRegExp = false) {
     super();
     this.token = token;
+    this.isRegExp = isRegExp;
   }
 
   emit(ts) {
-    ts.put(this.token);
+    ts.put(this.token, this.isRegExp);
   }
 }
 
