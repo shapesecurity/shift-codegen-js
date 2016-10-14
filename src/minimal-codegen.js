@@ -711,7 +711,7 @@ export default class MinimalCodeGen {
 
   reduceYieldExpression(node, {expression}) {
     if (node.expression == null) return t("yield");
-    return seq(t("yield"), p(node.expression, getPrecedence(node), expression));
+    return objectAssign(seq(t("yield"), p(node.expression, getPrecedence(node), expression)), {containsIn: expression.containsIn});
   }
 
   reduceYieldGeneratorExpression(node, {expression}) {
