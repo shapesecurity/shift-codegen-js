@@ -454,6 +454,20 @@ describe("Code generator", function () {
       test("a/i");
     });
 
+    it("Exponential", function () {
+      test("a**b");
+      test("(a**b)**c");
+      test("a**b**c");
+      test("a*b**c");
+      test("(a*b)**c");
+      test("a**b*c");
+      test("a**(b*c)");
+      test("(-a)**b");
+      test("-(a**b)")
+      test("(void a)**b")
+      test("void(a**b)")
+    });
+
     it("PrefixExpression", function () {
       test("+a");
       test("-a");

@@ -454,7 +454,8 @@ export class ExtensibleCodeGen {
     let startsWithLetSquareBracket = left.startsWithLetSquareBracket;
     let startsWithFunctionOrClass = left.startsWithFunctionOrClass;
     let leftContainsIn = left.containsIn;
-    if (getPrecedence(node.left) < getPrecedence(node)) {
+    let isRightAssociative = node.operator === "**";
+    if (getPrecedence(node.left) < getPrecedence(node) || isRightAssociative && (getPrecedence(node.left) === getPrecedence(node) || node.left.type === "UnaryExpression")) {
       leftCode = this.paren(leftCode, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER);
       startsWithCurly = false;
       startsWithLetSquareBracket = false;
@@ -463,7 +464,7 @@ export class ExtensibleCodeGen {
     }
     let rightCode = right;
     let rightContainsIn = right.containsIn;
-    if (getPrecedence(node.right) <= getPrecedence(node)) {
+    if (getPrecedence(node.right) < getPrecedence(node) || !isRightAssociative && (getPrecedence(node.right) === getPrecedence(node))) {
       rightCode = this.paren(rightCode, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER);
       rightContainsIn = false;
     }
