@@ -685,19 +685,9 @@ export class ExtensibleCodeGen {
   }
 
   reduceForInStatement(node, {left, right, body}) {
-    let leftP = left;
-    switch (node.left.type) {
-      case "VariableDeclaration":
-        leftP = noIn(markContainsIn(left));
-        break;
-      case "AssignmentTargetIdentifier":
-        if (node.left.name === "let") {
-          leftP = this.paren(left, Sep.FOR_IN_LET_PAREN_BEFORE, Sep.FOR_IN_LET_PAREN_BEFORE);
-        }
-        break;
-    }
+    left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
     return objectAssign(
-      seq(this.t("for"), this.sep(Sep.AFTER_FORIN_FOR), this.paren(seq(leftP, this.sep(Sep.BEFORE_FORIN_IN), this.t("in"), this.sep(Sep.AFTER_FORIN_FOR), right), Sep.FOR_IN_PAREN_BEFORE, Sep.FOR_IN_PAREN_AFTER), this.sep(Sep.BEFORE_FORIN_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
+      seq(this.t("for"), this.sep(Sep.AFTER_FORIN_FOR), this.paren(seq(left.startsWithLet ? this.paren(left, Sep.FOR_IN_LET_PAREN_BEFORE, Sep.FOR_IN_LET_PAREN_AFTER) : left, this.sep(Sep.BEFORE_FORIN_IN), this.t("in"), this.sep(Sep.AFTER_FORIN_FOR), right), Sep.FOR_IN_PAREN_BEFORE, Sep.FOR_IN_PAREN_AFTER), this.sep(Sep.BEFORE_FORIN_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 

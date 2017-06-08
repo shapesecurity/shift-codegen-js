@@ -354,19 +354,9 @@ export default class MinimalCodeGen {
   }
 
   reduceForInStatement(node, {left, right, body}) {
-    let leftP = left;
-    switch (node.left.type) {
-      case "VariableDeclaration":
-        leftP = noIn(markContainsIn(left));
-        break;
-      case "AssignmentTargetIdentifier":
-        if (node.left.name === "let") {
-          leftP = paren(left);
-        }
-        break;
-    }
+    left = node.left.type === "VariableDeclaration" ? noIn(markContainsIn(left)) : left;
     return objectAssign(
-      seq(t("for"), paren(seq(leftP, t("in"), right)), body),
+      seq(t("for"), paren(seq(left.startsWithLet ? paren(left) : left, t("in"), right)), body),
       {endsWithMissingElse: body.endsWithMissingElse});
   }
 
