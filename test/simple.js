@@ -637,6 +637,7 @@ describe("Code generator", function () {
 
     it("ForOfStatement", function () {
       test("for(a of b);");
+      test("for(a of(1,2));");
       test("for([a]of[b]);");
       test("for(let[a]of[b]);");
       testScript("for((let)of b);");
@@ -755,6 +756,11 @@ describe("Code generator", function () {
       test("for(var a in 1);");
       testScript("for((let)in 1);");
       test("for(a in 1);");
+      test("for(a in 1,2);");
+      testScript("for((let)in b);");
+      testScript("for((let.a)in b);");
+      testScript("for((let[a])in b);");
+      test2Script("for((let.a)in b);", "for((let).a in b);");
     });
 
     it("ForStatement", function () {
