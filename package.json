@@ -1,6 +1,6 @@
 {
   "name": "shift-codegen",
-  "version": "5.0.3",
+  "version": "5.0.4",
   "description": "code generator for Shift format ASTs",
   "author": "Shape Security Labs",
   "homepage": "https://github.com/shapesecurity/shift-codegen-js",
