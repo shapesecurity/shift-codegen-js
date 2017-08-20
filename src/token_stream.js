@@ -30,7 +30,7 @@ function renderNumber(n) {
     if (/[eE]/.test(s)) {
       return s.replace(/[eE]\+/, "e");
     }
-    return n.toString(10).replace(/0+$/, function(match){ return "e" + match.length; });
+    return n.toString(10).replace(/0{3,}$/, function(match){ return "e" + match.length; });
   } else if (n % 1 === 0) {
     if (n > 1e15 && n < 1e20) {
       return "0x" + n.toString(16).toUpperCase();
