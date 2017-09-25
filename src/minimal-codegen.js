@@ -233,8 +233,9 @@ export default class MinimalCodeGen {
   }
 
   reduceCallExpression(node, {callee, arguments: args}) {
+    const parenthizedArgs = args.map((a, i) => p(node.arguments[i], Precedence.Assignment, a));
     return objectAssign(
-      seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(args))),
+      seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(parenthizedArgs))),
       {
         startsWithCurly: callee.startsWithCurly,
         startsWithLetSquareBracket: callee.startsWithLetSquareBracket,
@@ -551,9 +552,10 @@ export default class MinimalCodeGen {
   }
 
   reduceNewExpression(node, {callee, arguments: args}) {
+    const parenthizedArgs = args.map((a, i) => p(node.arguments[i], Precedence.Assignment, a));
     let calleeRep = getPrecedence(node.callee) == Precedence.Call ? paren(callee) :
       p(node.callee, getPrecedence(node), callee);
-    return seq(t("new"), calleeRep, args.length === 0 ? empty() : paren(commaSep(args)));
+    return seq(t("new"), calleeRep, args.length === 0 ? empty() : paren(commaSep(parenthizedArgs)));
   }
 
   reduceNewTargetExpression() {
