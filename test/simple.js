@@ -501,6 +501,8 @@ describe("Code generator", function () {
       test("a()");
       test("a(a)");
       test("a(a,b)");
+      test("a((a,b))");
+      test("new a((a,b))");
       test("a.a");
       test("a[a]");
       test2("new a", "new a()");
@@ -1066,6 +1068,6 @@ describe("CodeRep", function(){
     var tree = reduce(new MinimalCodeGen, parse("f(0,1,(2,3))"));
     var count = 0;
     tree.forEach(function(){++count;});
-    expect(count).eql(13);
+    expect(count).eql(14);
   });
 })

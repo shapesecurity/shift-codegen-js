@@ -563,8 +563,9 @@ export class ExtensibleCodeGen {
   }
 
   reduceCallExpression(node, {callee, arguments: args}) {
+    const parenthizedArgs = args.map((a, i) => this.p(node.arguments[i], Precedence.Assignment, a));
     return objectAssign(
-      seq(this.p(node.callee, getPrecedence(node), callee), this.sep(Sep.CALL), this.paren(this.commaSep(args, Sep.ARGS_BEFORE_COMMA, Sep.ARGS_AFTER_COMMA), Sep.CALL_PAREN_BEFORE, Sep.CALL_PAREN_AFTER, Sep.CALL_PAREN_EMPTY)),
+      seq(this.p(node.callee, getPrecedence(node), callee), this.sep(Sep.CALL), this.paren(this.commaSep(parenthizedArgs, Sep.ARGS_BEFORE_COMMA, Sep.ARGS_AFTER_COMMA), Sep.CALL_PAREN_BEFORE, Sep.CALL_PAREN_AFTER, Sep.CALL_PAREN_EMPTY)),
       {
         startsWithCurly: callee.startsWithCurly,
         startsWithLetSquareBracket: callee.startsWithLetSquareBracket,
@@ -885,9 +886,10 @@ export class ExtensibleCodeGen {
   }
 
   reduceNewExpression(node, {callee, arguments: args}) {
+    const parenthizedArgs = args.map((a, i) => this.p(node.arguments[i], Precedence.Assignment, a));
     let calleeRep = getPrecedence(node.callee) == Precedence.Call ? this.paren(callee, Sep.NEW_CALLEE_PAREN_BEFORE, Sep.NEW_CALLEE_PAREN_AFTER) :
       this.p(node.callee, getPrecedence(node), callee);
-    return seq(this.t("new"), this.sep(Sep.AFTER_NEW), calleeRep, args.length === 0 ? this.sep(Sep.EMPTY_NEW_CALL) : seq(this.sep(Sep.BEFORE_NEW_ARGS), this.paren(this.commaSep(args, Sep.ARGS_BEFORE_COMMA, Sep.ARGS_AFTER_COMMA), Sep.NEW_PAREN_BEFORE, Sep.NEW_PAREN_AFTER, Sep.NEW_PAREN_EMPTY)));
+    return seq(this.t("new"), this.sep(Sep.AFTER_NEW), calleeRep, args.length === 0 ? this.sep(Sep.EMPTY_NEW_CALL) : seq(this.sep(Sep.BEFORE_NEW_ARGS), this.paren(this.commaSep(parenthizedArgs, Sep.ARGS_BEFORE_COMMA, Sep.ARGS_AFTER_COMMA), Sep.NEW_PAREN_BEFORE, Sep.NEW_PAREN_AFTER, Sep.NEW_PAREN_EMPTY)));
   }
 
   reduceNewTargetExpression() {
