@@ -21,137 +21,137 @@ const Precedence = {
   Call: 17,
   TaggedTemplate: 18,
   Member: 19,
-  Primary: 20
+  Primary: 20,
 };
 
-export {Precedence};
+export { Precedence };
 
 const BinaryPrecedence = {
-  ",": Precedence.Sequence,
-  "||": Precedence.LogicalOR,
-  "&&": Precedence.LogicalAND,
-  "|": Precedence.BitwiseOR,
-  "^": Precedence.BitwiseXOR,
-  "&": Precedence.BitwiseAND,
-  "==": Precedence.Equality,
-  "!=": Precedence.Equality,
-  "===": Precedence.Equality,
-  "!==": Precedence.Equality,
-  "<": Precedence.Relational,
-  ">": Precedence.Relational,
-  "<=": Precedence.Relational,
-  ">=": Precedence.Relational,
-  "in": Precedence.Relational,
-  "instanceof": Precedence.Relational,
-  "<<": Precedence.BitwiseSHIFT,
-  ">>": Precedence.BitwiseSHIFT,
-  ">>>": Precedence.BitwiseSHIFT,
-  "+": Precedence.Additive,
-  "-": Precedence.Additive,
-  "*": Precedence.Multiplicative,
-  "%": Precedence.Multiplicative,
-  "/": Precedence.Multiplicative,
-  "**": Precedence.Exponential
+  ',': Precedence.Sequence,
+  '||': Precedence.LogicalOR,
+  '&&': Precedence.LogicalAND,
+  '|': Precedence.BitwiseOR,
+  '^': Precedence.BitwiseXOR,
+  '&': Precedence.BitwiseAND,
+  '==': Precedence.Equality,
+  '!=': Precedence.Equality,
+  '===': Precedence.Equality,
+  '!==': Precedence.Equality,
+  '<': Precedence.Relational,
+  '>': Precedence.Relational,
+  '<=': Precedence.Relational,
+  '>=': Precedence.Relational,
+  'in': Precedence.Relational,
+  'instanceof': Precedence.Relational,
+  '<<': Precedence.BitwiseSHIFT,
+  '>>': Precedence.BitwiseSHIFT,
+  '>>>': Precedence.BitwiseSHIFT,
+  '+': Precedence.Additive,
+  '-': Precedence.Additive,
+  '*': Precedence.Multiplicative,
+  '%': Precedence.Multiplicative,
+  '/': Precedence.Multiplicative,
+  '**': Precedence.Exponential,
 };
 
 export function getPrecedence(node) {
   switch (node.type) {
-    case "ArrayExpression":
-    case "FunctionExpression":
-    case "IdentifierExpression":
-    case "LiteralBooleanExpression":
-    case "LiteralNullExpression":
-    case "LiteralNumericExpression":
-    case "LiteralInfinityExpression":
-    case "LiteralRegExpExpression":
-    case "LiteralStringExpression":
-    case "ObjectExpression":
-    case "ThisExpression":
+    case 'ArrayExpression':
+    case 'FunctionExpression':
+    case 'IdentifierExpression':
+    case 'LiteralBooleanExpression':
+    case 'LiteralNullExpression':
+    case 'LiteralNumericExpression':
+    case 'LiteralInfinityExpression':
+    case 'LiteralRegExpExpression':
+    case 'LiteralStringExpression':
+    case 'ObjectExpression':
+    case 'ThisExpression':
       return Precedence.Primary;
 
-    case "ArrowExpression":
-    case "AssignmentExpression":
-    case "CompoundAssignmentExpression":
-    case "YieldExpression":
-    case "YieldGeneratorExpression":
+    case 'ArrowExpression':
+    case 'AssignmentExpression':
+    case 'CompoundAssignmentExpression':
+    case 'YieldExpression':
+    case 'YieldGeneratorExpression':
       return Precedence.Assignment;
 
-    case "ConditionalExpression":
+    case 'ConditionalExpression':
       return Precedence.Conditional;
 
-    case "ComputedMemberExpression":
-    case "StaticMemberExpression":
-    case "ComputedMemberAssignmentTarget":
-    case "StaticMemberAssignmentTarget":
+    case 'ComputedMemberExpression':
+    case 'StaticMemberExpression':
+    case 'ComputedMemberAssignmentTarget':
+    case 'StaticMemberAssignmentTarget':
       switch (node.object.type) {
-        case "CallExpression":
-        case "ComputedMemberExpression":
-        case "StaticMemberExpression":
-        case "TemplateExpression":
+        case 'CallExpression':
+        case 'ComputedMemberExpression':
+        case 'StaticMemberExpression':
+        case 'TemplateExpression':
           return getPrecedence(node.object);
         default:
           return Precedence.Member;
       }
 
-    case "TemplateExpression":
+    case 'TemplateExpression':
       if (node.tag == null) return Precedence.Member;
       switch (node.tag.type) {
-        case "CallExpression":
-        case "ComputedMemberExpression":
-        case "StaticMemberExpression":
-        case "TemplateExpression":
+        case 'CallExpression':
+        case 'ComputedMemberExpression':
+        case 'StaticMemberExpression':
+        case 'TemplateExpression':
           return getPrecedence(node.tag);
         default:
           return Precedence.Member;
       }
 
-    case "BinaryExpression":
+    case 'BinaryExpression':
       return BinaryPrecedence[node.operator];
 
-    case "CallExpression":
+    case 'CallExpression':
       return Precedence.Call;
-    case "NewExpression":
+    case 'NewExpression':
       return node.arguments.length === 0 ? Precedence.New : Precedence.Member;
-    case "UpdateExpression":
+    case 'UpdateExpression':
       return node.isPrefix ? Precedence.Prefix : Precedence.Postfix;
-    case "UnaryExpression":
+    case 'UnaryExpression':
       return Precedence.Prefix;
   }
 }
 
 export function escapeStringLiteral(stringValue) {
-  let result = "";
+  let result = '';
   let nSingle = 0, nDouble = 0;
   for (let i = 0, l = stringValue.length; i < l; ++i) {
     let ch = stringValue[i];
-    if (ch === "\"") {
+    if (ch === '"') {
       ++nDouble;
-    } else if (ch === "'") {
+    } else if (ch === '\'') {
       ++nSingle;
     }
   }
-  let delim = nDouble > nSingle ? "'" : "\"";
+  let delim = nDouble > nSingle ? '\'' : '"';
   result += delim;
   for (let i = 0; i < stringValue.length; i++) {
     let ch = stringValue.charAt(i);
     switch (ch) {
       case delim:
-        result += "\\" + delim;
+        result += '\\' + delim;
         break;
-      case "\n":
-        result += "\\n";
+      case '\n':
+        result += '\\n';
         break;
-      case "\r":
-        result += "\\r";
+      case '\r':
+        result += '\\r';
         break;
-      case "\\":
-        result += "\\\\";
+      case '\\':
+        result += '\\\\';
         break;
-      case "\u2028":
-        result += "\\u2028";
+      case '\u2028':
+        result += '\\u2028';
         break;
-      case "\u2029":
-        result += "\\u2029";
+      case '\u2029':
+        result += '\\u2029';
         break;
       default:
         result += ch;
@@ -218,9 +218,9 @@ export class Paren extends CodeRep {
   }
 
   emit(ts) {
-    ts.put("(");
+    ts.put('(');
     this.expr.emit(ts, false);
-    ts.put(")");
+    ts.put(')');
   }
 
   forEach(f) {
@@ -236,9 +236,9 @@ export class Bracket extends CodeRep {
   }
 
   emit(ts) {
-    ts.put("[");
+    ts.put('[');
     this.expr.emit(ts, false);
-    ts.put("]");
+    ts.put(']');
   }
 
   forEach(f) {
@@ -254,9 +254,9 @@ export class Brace extends CodeRep {
   }
 
   emit(ts) {
-    ts.put("{");
+    ts.put('{');
     this.expr.emit(ts, false);
-    ts.put("}");
+    ts.put('}');
   }
 
   forEach(f) {
@@ -289,9 +289,9 @@ export class ContainsIn extends CodeRep {
 
   emit(ts, noIn) {
     if (noIn) {
-      ts.put("(");
+      ts.put('(');
       this.expr.emit(ts, false);
-      ts.put(")");
+      ts.put(')');
     } else {
       this.expr.emit(ts, false);
     }
@@ -321,7 +321,7 @@ export class Seq extends CodeRep {
 
 export class Semi extends Token {
   constructor() {
-    super(";");
+    super(';');
   }
 }
 
@@ -332,12 +332,12 @@ export class CommaSep extends CodeRep {
   }
 
   emit(ts, noIn) {
-    var first = true;
-    this.children.forEach((cr) => {
+    let first = true;
+    this.children.forEach(cr => {
       if (first) {
         first = false;
       } else {
-        ts.put(",");
+        ts.put(',');
       }
       cr.emit(ts, noIn);
     });
