@@ -3,4 +3,4 @@
 node_modules/
 coverage/
 dist/
-shift-codegen.js
+package-lock.json
