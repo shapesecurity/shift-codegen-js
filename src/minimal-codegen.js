@@ -1,6 +1,6 @@
 import objectAssign from 'object-assign';
 import { keyword } from 'esutils';
-import { Precedence, getPrecedence, escapeStringLiteral, CodeRep, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp } from './coderep';
+import { Precedence, getPrecedence, escapeStringLiteral, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp } from './coderep';
 
 function p(node, precedence, a) {
   return getPrecedence(node) < precedence ? paren(a) : a;
@@ -142,7 +142,7 @@ export default class MinimalCodeGen {
       seq(leftCode, t(node.operator), rightCode),
       {
         containsIn: leftContainsIn || rightContainsIn || node.operator === 'in',
-        containsGroup: node.operator == ',',
+        containsGroup: node.operator === ',',
         startsWithCurly,
         startsWithLetSquareBracket,
         startsWithFunctionOrClass,
@@ -334,7 +334,7 @@ export default class MinimalCodeGen {
     return seq(name, t(':'), getAssignmentExpr(expression));
   }
 
-  reduceDebuggerStatement(node) {
+  reduceDebuggerStatement(/* node */) {
     return seq(t('debugger'), semiOp());
   }
 
@@ -342,7 +342,7 @@ export default class MinimalCodeGen {
     return seq(t('do'), body, t('while'), paren(test), semiOp());
   }
 
-  reduceEmptyStatement(node) {
+  reduceEmptyStatement(/* node */) {
     return semi();
   }
 
@@ -520,11 +520,11 @@ export default class MinimalCodeGen {
     return t(node.value.toString());
   }
 
-  reduceLiteralNullExpression(node) {
+  reduceLiteralNullExpression(/* node */) {
     return t('null');
   }
 
-  reduceLiteralInfinityExpression(node) {
+  reduceLiteralInfinityExpression(/* node */) {
     return t('2e308');
   }
 
@@ -553,7 +553,7 @@ export default class MinimalCodeGen {
 
   reduceNewExpression(node, { callee, arguments: args }) {
     const parenthizedArgs = args.map((a, i) => p(node.arguments[i], Precedence.Assignment, a));
-    let calleeRep = getPrecedence(node.callee) == Precedence.Call ? paren(callee) :
+    let calleeRep = getPrecedence(node.callee) === Precedence.Call ? paren(callee) :
       p(node.callee, getPrecedence(node), callee);
     return seq(t('new'), calleeRep, args.length === 0 ? empty() : paren(commaSep(parenthizedArgs)));
   }
@@ -660,7 +660,6 @@ export default class MinimalCodeGen {
 
   reduceTemplateExpression(node, { tag, elements }) {
     let state = node.tag == null ? empty() : p(node.tag, getPrecedence(node), tag);
-    let templateData = '';
     state = seq(state, t('`'));
     for (let i = 0, l = node.elements.length; i < l; ++i) {
       if (node.elements[i].type === 'TemplateElement') {
@@ -686,7 +685,7 @@ export default class MinimalCodeGen {
     return t(node.rawValue);
   }
 
-  reduceThisExpression(node) {
+  reduceThisExpression(/* node */) {
     return t('this');
   }
 

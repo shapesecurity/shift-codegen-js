@@ -69,7 +69,7 @@ export class TokenStream {
         this.put(';');
       }
     }
-    if (this.lastNumber !== null && tokenStr.length == 1) {
+    if (this.lastNumber !== null && tokenStr.length === 1) {
       if (tokenStr === '.') {
         this.result += numberDot(this.lastNumber);
         this.lastNumber = null;
@@ -84,11 +84,11 @@ export class TokenStream {
     let previousWasRegExp = this.previousWasRegExp;
     this.previousWasRegExp = isRegExp;
     if (lastChar &&
-        ((lastChar == '+' || lastChar == '-') &&
-        lastChar == rightChar ||
+        ((lastChar === '+' || lastChar === '-') &&
+        lastChar === rightChar ||
         code.isIdentifierPartES6(lastChar.charCodeAt(0)) && code.isIdentifierPartES6(rightChar.charCodeAt(0)) ||
-        lastChar == '/' && rightChar == '/' ||
-        previousWasRegExp && rightChar == 'i')) {
+        lastChar === '/' && rightChar === '/' ||
+        previousWasRegExp && rightChar === 'i')) {
       this.result += ' ';
     }
 

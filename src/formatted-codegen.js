@@ -1,6 +1,21 @@
 import objectAssign from 'object-assign';
 import { keyword } from 'esutils';
-import { Precedence, getPrecedence, escapeStringLiteral, CodeRep, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp } from './coderep';
+import { Precedence, getPrecedence, escapeStringLiteral, CodeRep, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, SemiOp } from './coderep';
+
+const INDENT = '  ';
+class Linebreak extends CodeRep {
+  constructor() {
+    super();
+    this.indentation = 0;
+  }
+
+  emit(ts) {
+    ts.put('\n');
+    for (let i = 0; i < this.indentation; ++i) {
+      ts.put(INDENT);
+    }
+  }
+}
 
 function empty() {
   return new Empty();
@@ -350,23 +365,23 @@ export class ExtensibleCodeGen {
     return state ? state.containsGroup ? this.paren(state, Sep.EXPRESSION_PAREN_BEFORE, Sep.EXPRESSION_PAREN_AFTER) : state : empty();
   }
 
-  paren(rep, first, last, empty) {
+  paren(rep, first, last, emptySep) {
     if (isEmpty(rep)) {
-      return new Paren(this.sep(empty));
+      return new Paren(this.sep(emptySep));
     }
-    return new Paren(seq(first ? this.sep(first) : new Empty, rep, last ? this.sep(last) : new Empty));
+    return new Paren(seq(first ? this.sep(first) : empty(), rep, last ? this.sep(last) : empty()));
   }
 
-  brace(rep, node, first, last, empty) {
+  brace(rep, node, first, last, emptySep) {
     if (isEmpty(rep)) {
-      return new Brace(this.sep(empty));
+      return new Brace(this.sep(emptySep));
     }
     return new Brace(seq(this.sep(first), rep, this.sep(last)));
   }
 
-  bracket(rep, first, last, empty) {
+  bracket(rep, first, last, emptySep) {
     if (isEmpty(rep)) {
-      return new Bracket(this.sep(empty));
+      return new Bracket(this.sep(emptySep));
     }
     return new Bracket(seq(this.sep(first), rep, this.sep(last)));
   }
@@ -388,8 +403,8 @@ export class ExtensibleCodeGen {
     return new SemiOp;
   }
 
-  sep(kind) {
-    return new Empty();
+  sep(/* kind */) {
+    return empty();
   }
 
   reduceArrayExpression(node, { elements }) {
@@ -472,7 +487,7 @@ export class ExtensibleCodeGen {
       seq(leftCode, this.sep(Sep.BEFORE_BINOP(node.operator)), this.t(node.operator), this.sep(Sep.AFTER_BINOP(node.operator)), rightCode),
       {
         containsIn: leftContainsIn || rightContainsIn || node.operator === 'in',
-        containsGroup: node.operator == ',',
+        containsGroup: node.operator === ',',
         startsWithCurly,
         startsWithLetSquareBracket,
         startsWithFunctionOrClass,
@@ -854,11 +869,11 @@ export class ExtensibleCodeGen {
     return this.t(node.value.toString());
   }
 
-  reduceLiteralNullExpression(node) {
+  reduceLiteralNullExpression(/* node */) {
     return this.t('null');
   }
 
-  reduceLiteralInfinityExpression(node) {
+  reduceLiteralInfinityExpression(/* node */) {
     return this.t('2e308');
   }
 
@@ -887,7 +902,7 @@ export class ExtensibleCodeGen {
 
   reduceNewExpression(node, { callee, arguments: args }) {
     const parenthizedArgs = args.map((a, i) => this.p(node.arguments[i], Precedence.Assignment, a));
-    let calleeRep = getPrecedence(node.callee) == Precedence.Call ? this.paren(callee, Sep.NEW_CALLEE_PAREN_BEFORE, Sep.NEW_CALLEE_PAREN_AFTER) :
+    let calleeRep = getPrecedence(node.callee) === Precedence.Call ? this.paren(callee, Sep.NEW_CALLEE_PAREN_BEFORE, Sep.NEW_CALLEE_PAREN_AFTER) :
       this.p(node.callee, getPrecedence(node), callee);
     return seq(this.t('new'), this.sep(Sep.AFTER_NEW), calleeRep, args.length === 0 ? this.sep(Sep.EMPTY_NEW_CALL) : seq(this.sep(Sep.BEFORE_NEW_ARGS), this.paren(this.commaSep(parenthizedArgs, Sep.ARGS_BEFORE_COMMA, Sep.ARGS_AFTER_COMMA), Sep.NEW_PAREN_BEFORE, Sep.NEW_PAREN_AFTER, Sep.NEW_PAREN_EMPTY)));
   }
@@ -994,7 +1009,6 @@ export class ExtensibleCodeGen {
 
   reduceTemplateExpression(node, { tag, elements }) {
     let state = node.tag == null ? empty() : seq(this.p(node.tag, getPrecedence(node), tag), this.sep(Sep.TEMPLATE_TAG));
-    let templateData = '';
     state = seq(state, this.t('`'));
     for (let i = 0, l = node.elements.length; i < l; ++i) {
       if (node.elements[i].type === 'TemplateElement') {
@@ -1020,7 +1034,7 @@ export class ExtensibleCodeGen {
     return this.t(node.rawValue);
   }
 
-  reduceThisExpression(node) {
+  reduceThisExpression(/* node */) {
     return this.t('this');
   }
 
@@ -1081,21 +1095,6 @@ export class ExtensibleCodeGen {
   }
 }
 
-
-const INDENT = '  ';
-class Linebreak extends CodeRep {
-  constructor() {
-    super();
-    this.indentation = 0;
-  }
-
-  emit(ts) {
-    ts.put('\n');
-    for (let i = 0; i < this.indentation; ++i) {
-      ts.put(INDENT);
-    }
-  }
-}
 
 function withoutTrailingLinebreak(state) {
   if (state && state instanceof Seq) {
@@ -1200,7 +1199,6 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case 'AFTER_DEFAULT_EQUALS':
       case 'AFTER_PROP':
       case 'BEFORE_JUMP_LABEL':
-      case 'BEFORE_CATCH':
       case 'BEFORE_CATCH_BINDING':
       case 'AFTER_CATCH_BINDING':
       case 'BEFORE_CLASS_NAME':
@@ -1218,9 +1216,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case 'AFTER_DOWHILE_WHILE':
       case 'AFTER_FORIN_FOR':
       case 'BEFORE_FORIN_IN':
-      case 'AFTER_FORIN_FOR':
       case 'BEFORE_FORIN_BODY':
-      case 'AFTER_FOROF_FOR':
       case 'BEFORE_FOROF_OF':
       case 'AFTER_FOROF_FOR':
       case 'BEFORE_FOROF_BODY':
@@ -1245,7 +1241,6 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case 'BEFORE_IMPORT_NAMESPACE':
       case 'BEFORE_IMPORT_STAR':
       case 'AFTER_IMPORT_STAR':
-      case 'AFTER_IMPORT_AS':
       case 'AFTER_NAMESPACE_BINDING':
       case 'BEFORE_IMPORT_AS':
       case 'AFTER_IMPORT_AS':
@@ -1276,7 +1271,6 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case 'VARIABLE_DECLARATION':
       case 'YIELD':
       case 'AFTER_YIELD_STAR':
-      case 'DECLARATORS_AFTER_COMMA':
       case 'BEFORE_INIT_EQUALS':
       case 'AFTER_INIT_EQUALS':
       case 'AFTER_WHILE':

@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
+'use strict';
+
 let fs = require('fs');
 let expect = require('expect.js');
 let codeGen = require('../').default;
 let MinimalCodeGen = require('../').MinimalCodeGen;
 let FormattedCodeGen = require('../').FormattedCodeGen;
 let ExtensibleCodeGen = require('../').ExtensibleCodeGen;
-let Sep = require('../').Sep;
-let parse = require('shift-parser').parseModule;
+let parseModule = require('shift-parser').parseModule;
 let parseScript = require('shift-parser').parseScript;
 let reduce = require('shift-reducer').default;
 let Precedence = require('../').Precedence;
@@ -73,7 +74,7 @@ describe('everything.js', () => {
     let source;
 
     source = '' + fs.readFileSync(require.resolve('everything.js/es2015-module'));
-    expect(parse(codeGen(parse(source)))).eql(parse(source));
+    expect(parseModule(codeGen(parseModule(source)))).eql(parseModule(source));
 
     source = '' + fs.readFileSync(require.resolve('everything.js/es2015-script'));
     expect(parseScript(codeGen(parseScript(source)))).eql(parseScript(source));
@@ -105,14 +106,14 @@ describe('Code generator', () => {
       expect(codeGen(tree, new ExtensibleCodeGen)).eql(to);
     }
 
-    function test(source) {
+    function testModule(source) {
       if (arguments.length !== 1) {
         throw new Error('Not supported');
       }
-      expect(codeGen(parse(source))).be(source);
-      expect(codeGen(parse(source), new ExtensibleCodeGen)).be(source);
-      expect(parse(codeGen(parse(source)))).eql(parse(source));
-      expect(parse(codeGen(parse(source), new FormattedCodeGen))).eql(parse(source));
+      expect(codeGen(parseModule(source))).be(source);
+      expect(codeGen(parseModule(source), new ExtensibleCodeGen)).be(source);
+      expect(parseModule(codeGen(parseModule(source)))).eql(parseModule(source));
+      expect(parseModule(codeGen(parseModule(source), new FormattedCodeGen))).eql(parseModule(source));
     }
 
     function testScript(source) {
@@ -129,10 +130,10 @@ describe('Code generator', () => {
       if (arguments.length !== 2) {
         throw new Error('Not supported');
       }
-      expect(codeGen(parse(source))).be(expected);
-      expect(codeGen(parse(source), new ExtensibleCodeGen)).be(expected);
-      expect(codeGen(parse(expected))).be(expected);
-      expect(codeGen(parse(expected), new ExtensibleCodeGen)).be(expected);
+      expect(codeGen(parseModule(source))).be(expected);
+      expect(codeGen(parseModule(source), new ExtensibleCodeGen)).be(expected);
+      expect(codeGen(parseModule(expected))).be(expected);
+      expect(codeGen(parseModule(expected), new ExtensibleCodeGen)).be(expected);
     }
 
     function test2Script(expected, source) {
@@ -159,7 +160,7 @@ describe('Code generator', () => {
       testShift('"use\\x20strict"',
         { type: 'Script', directives: [{ type: 'Directive', rawValue: 'use\\x20strict' }], statements: [] }
       );
-      test('"use strict"');
+      testModule('"use strict"');
       testShift('("use strict")',
         statement({ type: 'ExpressionStatement', expression: { type: 'LiteralStringExpression', value: 'use strict' } })
       );
@@ -181,491 +182,491 @@ describe('Code generator', () => {
       testShift('\'\\\\"\'',
         { type: 'Script', directives: [{ type: 'Directive', rawValue: '\\\\"' }], statements: [] }
       );
-      test('"\\\n\'"');
+      testModule('"\\\n\'"');
     });
 
     it('ArrayExpression', () => {
-      test('[]');
-      test('[a]');
+      testModule('[]');
+      testModule('[a]');
       test2('[a]', '[a,]');
       test2('[a,b,c]', '[a,b,c,]');
-      test('[a,,]');
-      test('[a,,,]');
-      test('[[a]]');
-      test('[(a,a)]');
+      testModule('[a,,]');
+      testModule('[a,,,]');
+      testModule('[[a]]');
+      testModule('[(a,a)]');
     });
 
     it('SpreadElement', () => {
-      test('[...a]');
-      test('[...a,...b]');
-      test('[...a,b,...c]');
-      test('[...a=b]');
-      test('[...(a,b)]');
-      test('f(...a)');
+      testModule('[...a]');
+      testModule('[...a,...b]');
+      testModule('[...a,b,...c]');
+      testModule('[...a=b]');
+      testModule('[...(a,b)]');
+      testModule('f(...a)');
     });
 
     it('ObjectExpression', () => {
-      test('({})');
+      testModule('({})');
       test2('({a:1})', '({a:1,})');
-      test('({}.a--)');
+      testModule('({}.a--)');
       test2('({1:1})', '({1.0:1})');
-      test('({a:b})');
+      testModule('({a:b})');
       test2('({255:0})', '({0xFF:0})');
       test2('({63:0})', '({0o77:0})');
       test2('({3:0})', '({0b11:0})');
       test2('({0:0})', '({0.:0})');
       test2('({0:0})', '({.0:0})');
       test2('({.1:0})', '({0.1:0})');
-      test('({.1:0})');
-      test('({"+0":b})');
-      test('({"+1":b})');
-      test('({"-0":b})');
-      test('({"-1":b})');
-      test('({".1":b})');
-      test('({"01":b})');
-      test('({"0x1":b})');
-      test('({" 0":b})');
-      test('({"  0":b})');
-      test('({"\t0":b})');
+      testModule('({.1:0})');
+      testModule('({"+0":b})');
+      testModule('({"+1":b})');
+      testModule('({"-0":b})');
+      testModule('({"-1":b})');
+      testModule('({".1":b})');
+      testModule('({"01":b})');
+      testModule('({"0x1":b})');
+      testModule('({" 0":b})');
+      testModule('({"  0":b})');
+      testModule('({"\t0":b})');
       test2('({"\t0":b})', '({"\\t0":b})');
-      test('({"\\n0":b})');
-      test('({[a]:b})');
+      testModule('({"\\n0":b})');
+      testModule('({[a]:b})');
       test2('({a:b})', '({"a":b})');
-      test('({" ":b})');
-      test('({get a(){;}})');
-      test('({set a(param){;}})');
-      test('({get a(){;},set a(param){;},b:1})');
-      test('({a:(a,b)})');
-      test('({a})');
+      testModule('({" ":b})');
+      testModule('({get a(){;}})');
+      testModule('({set a(param){;}})');
+      testModule('({get a(){;},set a(param){;},b:1})');
+      testModule('({a:(a,b)})');
+      testModule('({a})');
     });
 
     it('ArrayAssignmentTarget', () => {
-      test('[]=0');
-      test('[...a]=0');
-      test('[a,...a]=0');
-      test('[a,a=0,...a]=0');
-      test('[,,]=0');
-      test('[,...a]=0');
-      test('[a=(0,0)]=0');
+      testModule('[]=0');
+      testModule('[...a]=0');
+      testModule('[a,...a]=0');
+      testModule('[a,a=0,...a]=0');
+      testModule('[,,]=0');
+      testModule('[,...a]=0');
+      testModule('[a=(0,0)]=0');
     });
 
     it('ObjectAssignmentTarget', () => {
-      test('({a=(0,0)}=0)');
+      testModule('({a=(0,0)}=0)');
     });
 
     it('AssignmentTargetPropertyIdentifier', () => {
-      test('({a=0}=0)');
+      testModule('({a=0}=0)');
     });
 
     it('AssignmentTargetPropertyProperty', () => {
-      test('({a:b}=0)');
+      testModule('({a:b}=0)');
     });
 
     it('AssignmentTargetWithDefault', () => {
-      test('[a=0]=0');
-      test('({a:b=0}=0)');
+      testModule('[a=0]=0');
+      testModule('({a:b=0}=0)');
     });
 
     it('ArrayBinding', () => {
-      test('let[]=0');
-      test('let[...a]=0');
-      test('let[a,...b]=0');
-      test('let[a,b=0,...c]=0');
-      test('let[,,]=0');
-      test('let[,...a]=0');
-      test('let[a=(0,0)]=0');
+      testModule('let[]=0');
+      testModule('let[...a]=0');
+      testModule('let[a,...b]=0');
+      testModule('let[a,b=0,...c]=0');
+      testModule('let[,,]=0');
+      testModule('let[,...a]=0');
+      testModule('let[a=(0,0)]=0');
     });
 
     it('ObjectBinding', () => {
-      test('let{a=(0,0)}=0');
+      testModule('let{a=(0,0)}=0');
     });
 
     it('BindingPropertyIdentifier', () => {
-      test('let{a=0}=0');
+      testModule('let{a=0}=0');
     });
 
     it('BindingPropertyProperty', () => {
-      test('let{a:b}=0');
+      testModule('let{a:b}=0');
     });
 
     it('BindingWithDefault', () => {
-      test('let[a=0]=0');
-      test('let{a:b=0}=0');
+      testModule('let[a=0]=0');
+      testModule('let{a:b=0}=0');
     });
 
     it('ClassDeclaration', () => {
-      test('class A{}');
-      test('class A extends B{}');
-      test('class A extends(B,C){}');
-      test('class A extends(+B){}');
-      test('class A extends(()=>0){}');
-      test('class A extends[]{}');
-      test('class A extends{}{}');
-      test('class A extends B(){}');
-      test('class A extends new B{}');
-      test('class A extends B.C{}');
+      testModule('class A{}');
+      testModule('class A extends B{}');
+      testModule('class A extends(B,C){}');
+      testModule('class A extends(+B){}');
+      testModule('class A extends(()=>0){}');
+      testModule('class A extends[]{}');
+      testModule('class A extends{}{}');
+      testModule('class A extends B(){}');
+      testModule('class A extends new B{}');
+      testModule('class A extends B.C{}');
     });
 
     it('ClassExpression', () => {
-      test('(class{})');
-      test('(class A{})');
-      test('(class A extends B{})');
-      test('(class extends B{})');
-      test('(class A extends(B,C){})');
-      test('(class A extends(+B){})');
-      test('(class A extends(()=>0){})');
-      test('(class A extends[]{})');
-      test('(class A extends{}{})');
-      test('(class A extends B(){})');
-      test('(class A extends new B{})');
-      test('(class A extends B.C{})');
+      testModule('(class{})');
+      testModule('(class A{})');
+      testModule('(class A extends B{})');
+      testModule('(class extends B{})');
+      testModule('(class A extends(B,C){})');
+      testModule('(class A extends(+B){})');
+      testModule('(class A extends(()=>0){})');
+      testModule('(class A extends[]{})');
+      testModule('(class A extends{}{})');
+      testModule('(class A extends B(){})');
+      testModule('(class A extends new B{})');
+      testModule('(class A extends B.C{})');
     });
 
     it('ClassElement', () => {
-      test('(class{a(){}})');
-      test('(class{*a(){}})');
-      test('(class{static a(){}})');
-      test('(class{static*a(){}})');
-      test('(class{constructor(){}})');
+      testModule('(class{a(){}})');
+      testModule('(class{*a(){}})');
+      testModule('(class{static a(){}})');
+      testModule('(class{static*a(){}})');
+      testModule('(class{constructor(){}})');
     });
 
     it('Sequence', () => {
-      test('a,b,c,d');
+      testModule('a,b,c,d');
     });
 
     it('Assignment', () => {
-      test('a=b');
-      test('a+=b');
-      test('a*=b');
-      test('a%=b');
-      test('a**=b');
-      test('a<<=b');
-      test('a>>=b');
-      test('a>>>=b');
-      test('a/=b');
-      test('a|=b');
-      test('a^=b');
-      test('a,b=c');
-      test('a=b,c');
-      test('a=(b,c)');
-      test('a,b^=c');
-      test('a^=b,c');
-      test('a^=(b,c)');
+      testModule('a=b');
+      testModule('a+=b');
+      testModule('a*=b');
+      testModule('a%=b');
+      testModule('a**=b');
+      testModule('a<<=b');
+      testModule('a>>=b');
+      testModule('a>>>=b');
+      testModule('a/=b');
+      testModule('a|=b');
+      testModule('a^=b');
+      testModule('a,b=c');
+      testModule('a=b,c');
+      testModule('a=(b,c)');
+      testModule('a,b^=c');
+      testModule('a^=b,c');
+      testModule('a^=(b,c)');
 
-      test('a.b=0');
-      test('a[b]=0');
+      testModule('a.b=0');
+      testModule('a[b]=0');
     });
 
     it('Conditional', () => {
-      test('a?b:c');
-      test('a?b?c:d:e');
-      test('a?b:c?d:e');
-      test('a?b?c:d:e?f:g');
-      test('(a?b:c)?d:e');
-      test('(a,b)?(c,d):(e,f)');
-      test('a?b=c:d');
-      test('a?b=c:d=e');
-      test('a||b?c=d:e=f');
-      test('(a=b)?c:d');
-      test('a||(b?c:d)');
-      test('a?b||c:d');
-      test('a?b:c||d');
+      testModule('a?b:c');
+      testModule('a?b?c:d:e');
+      testModule('a?b:c?d:e');
+      testModule('a?b?c:d:e?f:g');
+      testModule('(a?b:c)?d:e');
+      testModule('(a,b)?(c,d):(e,f)');
+      testModule('a?b=c:d');
+      testModule('a?b=c:d=e');
+      testModule('a||b?c=d:e=f');
+      testModule('(a=b)?c:d');
+      testModule('a||(b?c:d)');
+      testModule('a?b||c:d');
+      testModule('a?b:c||d');
     });
 
     it('LogicalOr', () => {
-      test('a||b');
+      testModule('a||b');
     });
 
     it('LogicalAnd', () => {
-      test('a||b');
+      testModule('a||b');
     });
 
     it('BitwiseOr', () => {
-      test('a|b');
+      testModule('a|b');
     });
 
     it('BitwiseAnd', () => {
-      test('a&b');
+      testModule('a&b');
     });
 
     it('BitwiseXor', () => {
-      test('a^b');
-      test('a^b&b');
-      test('(a^b)&b');
+      testModule('a^b');
+      testModule('a^b&b');
+      testModule('(a^b)&b');
     });
 
     it('Equality', () => {
-      test('a==b');
-      test('a!=b');
-      test('a==b');
-      test('a!=b');
-      test('a==b==c');
-      test('a==(b==c)');
+      testModule('a==b');
+      testModule('a!=b');
+      testModule('a==b');
+      testModule('a!=b');
+      testModule('a==b==c');
+      testModule('a==(b==c)');
     });
 
     it('Relational', () => {
-      test('a<b');
-      test('a<=b');
-      test('a>b');
-      test('a>=b');
-      test('a instanceof b');
-      test('a in b');
-      test('a==b<b');
-      test('(a==b)<b');
-      test('for((b in b);;);');
-      test('for((b in b);b in b;b in b);');
-      test('for(var a=(b in b);b in b;b in b);');
-      test('for(var a=(b in b),c=(b in b);b in b;b in b);');
-      test('for(b in c in d);');
+      testModule('a<b');
+      testModule('a<=b');
+      testModule('a>b');
+      testModule('a>=b');
+      testModule('a instanceof b');
+      testModule('a in b');
+      testModule('a==b<b');
+      testModule('(a==b)<b');
+      testModule('for((b in b);;);');
+      testModule('for((b in b);b in b;b in b);');
+      testModule('for(var a=(b in b);b in b;b in b);');
+      testModule('for(var a=(b in b),c=(b in b);b in b;b in b);');
+      testModule('for(b in c in d);');
     });
 
     it('Shift', () => {
-      test('a<<b');
-      test('a>>b');
-      test('a>>>b');
-      test('a<<b<<c');
-      test('a<<(b<<c)');
-      test('a<<b<c');
-      test('a<<b<c');
-      test('a<<(b<c)');
+      testModule('a<<b');
+      testModule('a>>b');
+      testModule('a>>>b');
+      testModule('a<<b<<c');
+      testModule('a<<(b<<c)');
+      testModule('a<<b<c');
+      testModule('a<<b<c');
+      testModule('a<<(b<c)');
     });
 
     it('Additive', () => {
-      test('a+b');
-      test('a-b');
-      test('a+(b+b)');
-      test('a+(b<<b)');
-      test('a+b<<b');
-      test('(a<<b)+(c>>d)');
+      testModule('a+b');
+      testModule('a-b');
+      testModule('a+(b+b)');
+      testModule('a+(b<<b)');
+      testModule('a+b<<b');
+      testModule('(a<<b)+(c>>d)');
       test2('a*b+c/d', '(a*b)+(c/d)');
     });
 
     it('Multiplicative', () => {
-      test('a*b');
-      test('a/b');
-      test('a%b');
-      test('a%b%c');
-      test('a%(b%c)');
-      test('a+b%c');
-      test('(a+b)%c');
-      test('!a*b');
-      test('a*(b+c)');
+      testModule('a*b');
+      testModule('a/b');
+      testModule('a%b');
+      testModule('a%b%c');
+      testModule('a%(b%c)');
+      testModule('a+b%c');
+      testModule('(a+b)%c');
+      testModule('!a*b');
+      testModule('a*(b+c)');
 
-      test('a/i');
+      testModule('a/i');
     });
 
     it('Exponential', () => {
-      test('a**b');
-      test('(a**b)**c');
-      test('a**b**c');
-      test('a*b**c');
-      test('(a*b)**c');
-      test('a**b*c');
-      test('a**(b*c)');
-      test('(-a)**b');
-      test('-(a**b)');
-      test('(void a)**b');
-      test('void(a**b)');
+      testModule('a**b');
+      testModule('(a**b)**c');
+      testModule('a**b**c');
+      testModule('a*b**c');
+      testModule('(a*b)**c');
+      testModule('a**b*c');
+      testModule('a**(b*c)');
+      testModule('(-a)**b');
+      testModule('-(a**b)');
+      testModule('(void a)**b');
+      testModule('void(a**b)');
     });
 
     it('PrefixExpression', () => {
-      test('+a');
-      test('-a');
-      test('!a');
-      test('~a');
-      test('typeof a');
-      test('void a');
-      test('delete a.b');
-      test('++a');
-      test('--a');
-      test('+ ++a');
-      test('- --a');
-      test('a+ +a');
-      test('a-a');
-      test('typeof-a');
-      test('!a++');
-      test('!!a');
-      test('!!(a+a)');
+      testModule('+a');
+      testModule('-a');
+      testModule('!a');
+      testModule('~a');
+      testModule('typeof a');
+      testModule('void a');
+      testModule('delete a.b');
+      testModule('++a');
+      testModule('--a');
+      testModule('+ ++a');
+      testModule('- --a');
+      testModule('a+ +a');
+      testModule('a-a');
+      testModule('typeof-a');
+      testModule('!a++');
+      testModule('!!a');
+      testModule('!!(a+a)');
     });
 
     it('PostfixExpression', () => {
-      test('a++');
-      test('a--');
+      testModule('a++');
+      testModule('a--');
     });
 
     it('NewCallMember', () => {
-      test('new a');
-      test('new a(a)');
-      test('new a(a,b)');
-      test('new this.a');
-      test('a()');
-      test('a(a)');
-      test('a(a,b)');
-      test('a((a,b))');
-      test('new a((a,b))');
-      test('a.a');
-      test('a[a]');
+      testModule('new a');
+      testModule('new a(a)');
+      testModule('new a(a,b)');
+      testModule('new this.a');
+      testModule('a()');
+      testModule('a(a)');
+      testModule('a(a,b)');
+      testModule('a((a,b))');
+      testModule('new a((a,b))');
+      testModule('a.a');
+      testModule('a[a]');
       test2('new a', 'new a()');
-      test('new a(a)');
+      testModule('new a(a)');
       test2('(new a).a', 'new a().a');
-      test('new a(a).v');
-      test('new(a(a).v)');
-      test('(new a)()');
+      testModule('new a(a).v');
+      testModule('new(a(a).v)');
+      testModule('(new a)()');
       test2('(new new a(a).a.a).a', '(new (new a(a).a).a).a');
       test2('new((new a)().a)', 'new((new a)()).a');
-      test('new a.a');
-      test('new(a().a)');
+      testModule('new a.a');
+      testModule('new(a().a)');
     });
 
     it('LiteralRegExpExpression', () => {
-      test('a/ /b/');
-      test('/a/');
-      test('/a/i');
-      test('/a/gi');
-      test('/a\\s/gi');
-      test('/a\\r/gi');
-      test('/a\\r/ instanceof 3');
-      test('/a\\r/g instanceof 3');
-      test('/a/ in 0');
+      testModule('a/ /b/');
+      testModule('/a/');
+      testModule('/a/i');
+      testModule('/a/gi');
+      testModule('/a\\s/gi');
+      testModule('/a\\r/gi');
+      testModule('/a\\r/ instanceof 3');
+      testModule('/a\\r/g instanceof 3');
+      testModule('/a/ in 0');
     });
 
     it('LiteralBooleanExpression', () => {
-      test('true');
-      test('false');
+      testModule('true');
+      testModule('false');
     });
 
     it('LiteralNullExpression', () => {
-      test('null');
+      testModule('null');
       test2('null', 'nul\\u006c');
     });
 
     it('FunctionDeclaration', () => {
-      test('function f(){}');
-      test('function*f(){}');
-      test('function f(a){}');
-      test('function f(a,b){}');
-      test('function f(a,b,...rest){}');
+      testModule('function f(){}');
+      testModule('function*f(){}');
+      testModule('function f(a){}');
+      testModule('function f(a,b){}');
+      testModule('function f(a,b,...rest){}');
     });
 
     it('FunctionExpression', () => {
-      test('(function(){})');
-      test('(function f(){})');
-      test('(function*(){})');
-      test('(function*f(){})');
+      testModule('(function(){})');
+      testModule('(function f(){})');
+      testModule('(function*(){})');
+      testModule('(function*f(){})');
     });
 
     it('ArrowExpression', () => {
-      test('a=>a');
-      test('()=>a');
+      testModule('a=>a');
+      testModule('()=>a');
       test2('a=>a', '(a)=>a');
-      test('(...a)=>a');
-      test('(...[])=>0');
-      test('(a,...b)=>a');
-      test('(a=0)=>a');
-      test('(a,b)=>a');
-      test('({a})=>a');
-      test('({a=0})=>a');
-      test('([a])=>a');
-      test('a=>({})');
-      test('a=>{}');
-      test('a=>{({})}');
-      test('a=>{0;return}');
-      test('()=>function(){}');
-      test('()=>class{}');
-      test('()=>(1,2)');
-      test('(()=>0)()');
-      test('(a=(0,0))=>0');
+      testModule('(...a)=>a');
+      testModule('(...[])=>0');
+      testModule('(a,...b)=>a');
+      testModule('(a=0)=>a');
+      testModule('(a,b)=>a');
+      testModule('({a})=>a');
+      testModule('({a=0})=>a');
+      testModule('([a])=>a');
+      testModule('a=>({})');
+      testModule('a=>{}');
+      testModule('a=>{({})}');
+      testModule('a=>{0;return}');
+      testModule('()=>function(){}');
+      testModule('()=>class{}');
+      testModule('()=>(1,2)');
+      testModule('(()=>0)()');
+      testModule('(a=(0,0))=>0');
     });
 
     it('NewTargetExpression', () => {
-      test('function f(){new.target}');
+      testModule('function f(){new.target}');
       test2('function f(){new.target}', 'function f() { new . target }');
     });
 
     it('TemplateExpression', () => {
-      test('``');
-      test('````');
-      test('a``');
-      test('a.b``');
-      test('a[b]``');
-      test('a()``');
-      test('(a+b)``');
+      testModule('``');
+      testModule('````');
+      testModule('a``');
+      testModule('a.b``');
+      testModule('a[b]``');
+      testModule('a()``');
+      testModule('(a+b)``');
       test2('(function(){}``)', '(function(){})``');
       test2('(class{}``)', '(class{})``');
       test2('({}``)', '({})``');
-      test('`a`');
-      test('a`a`');
-      test('`a${b}c`');
-      test('`${a}`');
-      test('`${a}${b}`');
-      test('` ${a} ${b} `');
+      testModule('`a`');
+      testModule('a`a`');
+      testModule('`a${b}c`');
+      testModule('`${a}`');
+      testModule('`${a}${b}`');
+      testModule('` ${a} ${b} `');
       test2('` ${a} ${b} `', '` ${ a } ${ b } `');
-      test('`a\\${b}c`');
-      test('``.a');
-      test('``()');
-      test('new``');
+      testModule('`a\\${b}c`');
+      testModule('``.a');
+      testModule('``()');
+      testModule('new``');
       test2('new``', 'new ``()');
       test2('new``(a)', 'new ``(a)');
     });
 
     it('Super', () => {
-      test('class A extends B{constructor(){super()}}');
-      test('({m(){super.m()}})');
+      testModule('class A extends B{constructor(){super()}}');
+      testModule('({m(){super.m()}})');
     });
 
     it('YieldExpression', () => {
-      test('function*f(){yield}');
-      test('function*f(){yield a}');
-      test('function*f(){yield 0}');
-      test('function*f(){yield{}}');
-      test('function*f(){yield a+b}');
-      test('function*f(){yield a=b}');
-      test('function*f(){yield(a,b)}');
-      test('function*f(){f(yield,yield)}');
-      test('function*f(){f(yield a,yield b)}');
-      test('function*f(){yield yield yield}');
+      testModule('function*f(){yield}');
+      testModule('function*f(){yield a}');
+      testModule('function*f(){yield 0}');
+      testModule('function*f(){yield{}}');
+      testModule('function*f(){yield a+b}');
+      testModule('function*f(){yield a=b}');
+      testModule('function*f(){yield(a,b)}');
+      testModule('function*f(){f(yield,yield)}');
+      testModule('function*f(){f(yield a,yield b)}');
+      testModule('function*f(){yield yield yield}');
     });
 
     it('YieldGeneratorExpression', () => {
-      test('function*f(){yield*a}');
-      test('function*f(){yield*0}');
-      test('function*f(){yield*{}}');
-      test('function*f(){yield*a+b}');
-      test('function*f(){yield*a=b}');
-      test('function*f(){yield*(a,b)}');
-      test('function*f(){f(yield*a,yield*b)}');
-      test('function*f(){yield*yield*(yield)*(yield)}');
+      testModule('function*f(){yield*a}');
+      testModule('function*f(){yield*0}');
+      testModule('function*f(){yield*{}}');
+      testModule('function*f(){yield*a+b}');
+      testModule('function*f(){yield*a=b}');
+      testModule('function*f(){yield*(a,b)}');
+      testModule('function*f(){f(yield*a,yield*b)}');
+      testModule('function*f(){yield*yield*(yield)*(yield)}');
     });
 
     it('ForOfStatement', () => {
-      test('for(a of b);');
-      test('for(a of(1,2));');
-      test('for([a]of[b]);');
-      test('for(let[a]of[b]);');
+      testModule('for(a of b);');
+      testModule('for(a of(1,2));');
+      testModule('for([a]of[b]);');
+      testModule('for(let[a]of[b]);');
       testScript('for((let)of b);');
       testScript('for((let.a)of b);');
       testScript('for((let[a])of b);');
       test2Script('for((let.a)of b);', 'for((let).a of b);');
-      test('for(a of(b,c));');
+      testModule('for(a of(b,c));');
     });
 
     it('LiteralNumericExpression', () => {
-      test('0');
+      testModule('0');
       test2('0', '0x0');
       test2('0', '0o0');
       test2('0', '0b0');
-      test('1');
-      test('2');
-      test('0x38D7EA4C68001');
-      test('0x38D7EA4C68001.valueOf()');
+      testModule('1');
+      testModule('2');
+      testModule('0x38D7EA4C68001');
+      testModule('0x38D7EA4C68001.valueOf()');
       test2('15e5', '1500000');
       test2('155e3', '155000');
-      test('.1');
+      testModule('.1');
       test2('.1', '0.1');
       // floats
-      test('1.1.valueOf()');
-      test('15..valueOf()');
-      test('1..valueOf()');
+      testModule('1.1.valueOf()');
+      testModule('15..valueOf()');
+      testModule('1..valueOf()');
       test2('1e300.valueOf()', '1e+300.valueOf()');
       test2('8e15.valueOf()', '8000000000000000..valueOf()');
       test2('1e20', '100000000000000000001');
@@ -673,8 +674,8 @@ describe('Code generator', () => {
       test2('1', '1e0');
       test2('10', '1e1');
       test2('100', '1e2');
-      test('1e3');
-      test('1e4');
+      testModule('1e3');
+      testModule('1e4');
       test2('1e5', '100000');
       test2('1.3754889325393114', '1.3754889325393114');
       test2('1.3754889325393114e24', '0x0123456789abcdefABCDEF');
@@ -682,12 +683,12 @@ describe('Code generator', () => {
       test2('5.562684646268003e-308', '5.5626846462680035e-308');
       test2('5.562684646268003e-309', '5.5626846462680035e-309');
       test2('2147483648', '2147483648.0');
-      test('1e-7');
-      test('1e-8');
-      test('1e-9');
+      testModule('1e-7');
+      testModule('1e-8');
+      testModule('1e-9');
       test2('1e308', '1e+308');
-      test('1e308');
-      test('1e-308');
+      testModule('1e308');
+      testModule('1e-308');
     });
 
     it('LiteralInfinityExpression', () => {
@@ -697,21 +698,21 @@ describe('Code generator', () => {
     });
 
     it('LiteralStringExpression', () => {
-      test('("")');
+      testModule('("")');
       test2('("")', '(\'\')');
       test2('("a")', '(\'a\')');
       test2('(\'"\')', '("\\"")');
       test2('("a")', '(\'a\')');
       test2('("\'")', '(\'\\\'\')');
-      test('("a")');
-      test('(\'"\')');
-      test('("\b\\n\\r\t\v\f\\\\\\"\'\\u2028\\u2029日本")');
+      testModule('("a")');
+      testModule('(\'"\')');
+      testModule('("\b\\n\\r\t\v\f\\\\\\"\'\\u2028\\u2029日本")');
     });
 
     it('BlockStatement', () => {
-      test('{}');
-      test('{{}}');
-      test('{a:{}}');
+      testModule('{}');
+      testModule('{{}}');
+      testModule('{a:{}}');
       test2('{a;b}', '{a\nb\n}');
     });
 
@@ -735,35 +736,35 @@ describe('Code generator', () => {
     it('DoWhileStatement', () => {
       test2('do;while(1)', 'do;while(1)');
       test2('do{}while(1)', 'do{}while(1)');
-      test('do debugger;while(1)');
-      test('do if(3){}while(1)');
+      testModule('do debugger;while(1)');
+      testModule('do if(3){}while(1)');
       test2('do 3;while(1)', 'do(3);while(1)');
     });
 
     it('ExpressionStatement', () => {
-      test('a');
-      test('({a:3})');
-      test('(function(){})');
-      test('(class{})');
+      testModule('a');
+      testModule('({a:3})');
+      testModule('(function(){})');
+      testModule('(class{})');
       testScript('let');
       testScript('(let[a])');
       testScript('(let[a]++)');
       testScript('(let[a]=0)');
       testScript('(let[a].b`c`||e?f:g)');
-      test('do({a:3});while(1)');
-      test('~{a:3}');
-      test('({a:3}+1)');
-      test('a:~{a:3}');
-      test('~function(){}');
-      test('~function(){}()');
-      test('function name(){}');
+      testModule('do({a:3});while(1)');
+      testModule('~{a:3}');
+      testModule('({a:3}+1)');
+      testModule('a:~{a:3}');
+      testModule('~function(){}');
+      testModule('~function(){}()');
+      testModule('function name(){}');
     });
 
     it('ForInStatement', () => {
-      test('for(var a in 1);');
+      testModule('for(var a in 1);');
       testScript('for((let)in 1);');
-      test('for(a in 1);');
-      test('for(a in 1,2);');
+      testModule('for(a in 1);');
+      testModule('for(a in 1,2);');
       testScript('for((let)in b);');
       testScript('for((let.a)in b);');
       testScript('for((let[a])in b);');
@@ -771,27 +772,27 @@ describe('Code generator', () => {
     });
 
     it('ForStatement', () => {
-      test('for(var i=(1 in[]);;);');
-      test('for(var i=(1 in[]),b,c=(1 in[]);;);');
-      test('for(var a=(b=>c in 0);;);');
-      test('!function*(){for((yield a in 0);;);}');
-      test('!function*(){for((yield*a in 0);;);}');
-      test('for((1 in[]);;);');
-      test('for(1*(1 in[]);;);');
-      test('for(1*(1+1 in[]);;);');
-      test('for(1*(1+1 in[]);;);');
-      test('for(1*(1+(1 in[]));;);');
+      testModule('for(var i=(1 in[]);;);');
+      testModule('for(var i=(1 in[]),b,c=(1 in[]);;);');
+      testModule('for(var a=(b=>c in 0);;);');
+      testModule('!function*(){for((yield a in 0);;);}');
+      testModule('!function*(){for((yield*a in 0);;);}');
+      testModule('for((1 in[]);;);');
+      testModule('for(1*(1 in[]);;);');
+      testModule('for(1*(1+1 in[]);;);');
+      testModule('for(1*(1+1 in[]);;);');
+      testModule('for(1*(1+(1 in[]));;);');
     });
 
     it('IfStatement', () => {
-      test('if(a);');
-      test('if(a)b');
-      test('if(a)if(a)b');
-      test('if(a){}');
-      test('if(a);else;');
-      test('if(a);else{}');
-      test('if(a){}else{}');
-      test('if(a)if(a){}else{}else{}');
+      testModule('if(a);');
+      testModule('if(a)b');
+      testModule('if(a)if(a)b');
+      testModule('if(a){}');
+      testModule('if(a);else;');
+      testModule('if(a);else{}');
+      testModule('if(a){}else{}');
+      testModule('if(a)if(a){}else{}else{}');
       let IDENT = { type: 'IdentifierExpression', name: 'a' };
       let EMPTY = { type: 'EmptyStatement' };
 
@@ -820,47 +821,47 @@ describe('Code generator', () => {
     });
 
     it('LabeledStatement', () => {
-      test('a:;');
-      test('a:b:;');
+      testModule('a:;');
+      testModule('a:b:;');
     });
 
     it('ReturnStatement', () => {
-      test('function a(){return}');
-      test('function a(){return 0}');
-      test('function a(){return function a(){return 0}}');
+      testModule('function a(){return}');
+      testModule('function a(){return 0}');
+      testModule('function a(){return function a(){return 0}}');
     });
 
     it('SwitchStatement', () => {
-      test('switch(0){}');
-      test('switch(0){default:}');
-      test('switch(0){case 0:default:}');
-      test('switch(0){case 0:a;default:c:b}');
+      testModule('switch(0){}');
+      testModule('switch(0){default:}');
+      testModule('switch(0){case 0:default:}');
+      testModule('switch(0){case 0:a;default:c:b}');
     });
 
     it('ThrowStatement', () => {
-      test('throw 0');
-      test('throw(1<1)+1');
+      testModule('throw 0');
+      testModule('throw(1<1)+1');
     });
 
     it('TryStatement', () => {
-      test('try{}catch(a){}');
-      test('try{}catch(a){}finally{}');
-      test('try{}finally{}');
+      testModule('try{}catch(a){}');
+      testModule('try{}catch(a){}finally{}');
+      testModule('try{}finally{}');
     });
 
     it('VariableDeclarationStatement', () => {
-      test('var a=0');
-      test('var a=0,b=0');
-      test('var a=(0,0)');
-      test('var a=(0,0,0)');
-      test('var a');
-      test('var a,b');
-      test('var a=""in{}');
+      testModule('var a=0');
+      testModule('var a=0,b=0');
+      testModule('var a=(0,0)');
+      testModule('var a=(0,0,0)');
+      testModule('var a');
+      testModule('var a,b');
+      testModule('var a=""in{}');
     });
 
     it('WhileStatement', () => {
-      test('while(0);');
-      test('while(0)while(0);');
+      testModule('while(0);');
+      testModule('while(0)while(0);');
     });
 
     it('WithStatement', () => {
@@ -870,111 +871,111 @@ describe('Code generator', () => {
     });
 
     it('Import', () => {
-      test('import"m"');
-      test('import"m";0');
-      test('import a from"m"');
-      test('import{a}from"m"');
-      test('import{a,b}from"m"');
-      test('import a,{b}from"m"');
-      test('import a,{b,c}from"m"');
-      test('import a,{b,c}from"m";0');
+      testModule('import"m"');
+      testModule('import"m";0');
+      testModule('import a from"m"');
+      testModule('import{a}from"m"');
+      testModule('import{a,b}from"m"');
+      testModule('import a,{b}from"m"');
+      testModule('import a,{b,c}from"m"');
+      testModule('import a,{b,c}from"m";0');
       test2('import"m"', 'import {} from "m"');
       test2('import a from"m"', 'import a,{}from "m"');
     });
 
     it('ImportNamespace', () => {
-      test('import*as a from"m"');
-      test('import*as a from"m";0');
-      test('import a,*as b from"m"');
+      testModule('import*as a from"m"');
+      testModule('import*as a from"m";0');
+      testModule('import a,*as b from"m"');
     });
 
     it('ImportSpecifier', () => {
-      test('import{a}from"m"');
-      test('import{a}from"m";0');
-      test('import{a as b}from"m"');
-      test('import{a,b}from"m"');
-      test('import{a,b as c}from"m"');
-      test('import{a as b,c}from"m"');
-      test('import{a as b,c as d}from"m"');
+      testModule('import{a}from"m"');
+      testModule('import{a}from"m";0');
+      testModule('import{a as b}from"m"');
+      testModule('import{a,b}from"m"');
+      testModule('import{a,b as c}from"m"');
+      testModule('import{a as b,c}from"m"');
+      testModule('import{a as b,c as d}from"m"');
     });
 
     it('ExportAllFrom', () => {
-      test('export*from"m"');
-      test('export*from"m";0');
+      testModule('export*from"m"');
+      testModule('export*from"m";0');
     });
 
     it('ExportFrom', () => {
-      test('export{}from"m"');
-      test('export{}from"m";0');
-      test('export{a}from"m"');
-      test('export{a as b}from"m"');
-      test('export{a,b}from"m"');
+      testModule('export{}from"m"');
+      testModule('export{}from"m";0');
+      testModule('export{a}from"m"');
+      testModule('export{a as b}from"m"');
+      testModule('export{a,b}from"m"');
     });
 
     it('ExportLocals', () => {
-      test('export{}');
-      test('export{};0');
-      test('let a;export{a}');
-      test('let a;export{a as b}');
-      test('let a,b;export{a,b}');
+      testModule('export{}');
+      testModule('export{};0');
+      testModule('let a;export{a}');
+      testModule('let a;export{a as b}');
+      testModule('let a,b;export{a,b}');
     });
 
     it('Export', () => {
-      test('export var a');
-      test('export var a;0');
-      test('export var a=0');
-      test('export var a,b');
-      test('export var a=0,b=0');
-      test('export const a=0');
-      test('export let a');
-      test('export function f(){}');
-      test('export function f(){}0');
-      test('export class A{}');
-      test('export class A{}0');
+      testModule('export var a');
+      testModule('export var a;0');
+      testModule('export var a=0');
+      testModule('export var a,b');
+      testModule('export var a=0,b=0');
+      testModule('export const a=0');
+      testModule('export let a');
+      testModule('export function f(){}');
+      testModule('export function f(){}0');
+      testModule('export class A{}');
+      testModule('export class A{}0');
     });
 
     it('ExportDefault', () => {
-      test('export default function(){}');
-      test('export default function(){}0');
-      test('export default 0');
-      test('export default 0;0');
-      test('export default function f(){}');
-      test('export default function*f(){}');
-      test('export default class{}');
-      test('export default class A{}');
-      test('export default(class{})');
-      test('export default(function(){})');
-      test('export default{}');
-      test('export default(0,0)');
+      testModule('export default function(){}');
+      testModule('export default function(){}0');
+      testModule('export default 0');
+      testModule('export default 0;0');
+      testModule('export default function f(){}');
+      testModule('export default function*f(){}');
+      testModule('export default class{}');
+      testModule('export default class A{}');
+      testModule('export default(class{})');
+      testModule('export default(function(){})');
+      testModule('export default{}');
+      testModule('export default(0,0)');
     });
 
     it('ExportSpecifier', () => {
-      test('let a;export{a}');
-      test('let a,b;export{a as b}');
-      test('let a,b;export{a,b}');
-      test('let a,b,c;export{a,b as c}');
-      test('let a,b,c;export{a as b,c}');
-      test('let a,b,c,d;export{a as b,c as d}');
+      testModule('let a;export{a}');
+      testModule('let a,b;export{a as b}');
+      testModule('let a,b;export{a,b}');
+      testModule('let a,b,c;export{a,b as c}');
+      testModule('let a,b,c;export{a as b,c}');
+      testModule('let a,b,c,d;export{a as b,c as d}');
     });
 
     it('Module', () => {
-      test('');
-      test('a;a');
+      testModule('');
+      testModule('a;a');
     });
 
     it('ComputedMemberAssignmentTarget', () => {
-      test('(a.b++)[0]=1');
+      testModule('(a.b++)[0]=1');
     });
 
     it('ComputedPropertyName', () => {
-      test('({[(0,0)]:0})');
+      testModule('({[(0,0)]:0})');
     });
   });
 });
 
 describe('Pretty code generator', () => {
   function testPretty(source, scriptMode) {
-    let parseTest = scriptMode ? parseScript : parse;
+    let parseTest = scriptMode ? parseScript : parseModule;
     expect(codeGen(parseTest(source), new FormattedCodeGen)).be(source);
     expect(parseTest(codeGen(parseTest(source), new FormattedCodeGen))).eql(parseTest(source));
   }
@@ -1065,7 +1066,7 @@ describe('Pretty code generator', () => {
 
 describe('CodeRep', () => {
   it('should call forEach the appropriate number of times', () => {
-    let tree = reduce(new MinimalCodeGen, parse('f(0,1,(2,3))'));
+    let tree = reduce(new MinimalCodeGen, parseModule('f(0,1,(2,3))'));
     let count = 0;
     tree.forEach(() => {
       ++count;

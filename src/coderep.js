@@ -58,7 +58,11 @@ export function getPrecedence(node) {
   switch (node.type) {
     case 'ArrayExpression':
     case 'FunctionExpression':
+    case 'ClassExpression':
     case 'IdentifierExpression':
+    case 'AssignmentTargetIdentifier':
+    case 'NewTargetExpression':
+    case 'Super':
     case 'LiteralBooleanExpression':
     case 'LiteralNullExpression':
     case 'LiteralNumericExpression':
@@ -67,6 +71,8 @@ export function getPrecedence(node) {
     case 'LiteralStringExpression':
     case 'ObjectExpression':
     case 'ThisExpression':
+    case 'SpreadElement':
+    case 'FunctionBody':
       return Precedence.Primary;
 
     case 'ArrowExpression':
@@ -116,6 +122,8 @@ export function getPrecedence(node) {
       return node.isPrefix ? Precedence.Prefix : Precedence.Postfix;
     case 'UnaryExpression':
       return Precedence.Prefix;
+    default:
+      throw new Error('unreachable: ' + node.type);
   }
 }
 
