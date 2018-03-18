@@ -14,36 +14,38 @@
  * limitations under the License.
  */
 
-import {code} from "esutils";
+import { code } from 'esutils';
 
 function numberDot(fragment) {
-  if (fragment.indexOf(".") < 0 && fragment.indexOf("e") < 0 && fragment.indexOf("x") < 0) {
-    return "..";
+  if (fragment.indexOf('.') < 0 && fragment.indexOf('e') < 0 && fragment.indexOf('x') < 0) {
+    return '..';
   }
-  return ".";
+  return '.';
 }
 
 function renderNumber(n) {
-  var s;
+  let s;
   if (n >= 1e3 && n % 10 === 0) {
     s = n.toString(10);
     if (/[eE]/.test(s)) {
-      return s.replace(/[eE]\+/, "e");
+      return s.replace(/[eE]\+/, 'e');
     }
-    return n.toString(10).replace(/0{3,}$/, function(match){ return "e" + match.length; });
+    return n.toString(10).replace(/0{3,}$/, match => {
+      return 'e' + match.length;
+    });
   } else if (n % 1 === 0) {
     if (n > 1e15 && n < 1e20) {
-      return "0x" + n.toString(16).toUpperCase();
+      return '0x' + n.toString(16).toUpperCase();
     }
-    return n.toString(10).replace(/[eE]\+/, "e");
-  } else {
-    return n.toString(10).replace(/^0\./, ".").replace(/[eE]\+/, "e");
+    return n.toString(10).replace(/[eE]\+/, 'e');
   }
+  return n.toString(10).replace(/^0\./, '.').replace(/[eE]\+/, 'e');
+
 }
 
 export class TokenStream {
   constructor() {
-    this.result = "";
+    this.result = '';
     this.lastNumber = null;
     this.lastChar = null;
     this.optionalSemi = false;
@@ -63,15 +65,15 @@ export class TokenStream {
   put(tokenStr, isRegExp) {
     if (this.optionalSemi) {
       this.optionalSemi = false;
-      if (tokenStr !== "}") {
-        this.put(";");
+      if (tokenStr !== '}') {
+        this.put(';');
       }
     }
-    if (this.lastNumber !== null && tokenStr.length == 1) {
-      if (tokenStr === ".") {
+    if (this.lastNumber !== null && tokenStr.length === 1) {
+      if (tokenStr === '.') {
         this.result += numberDot(this.lastNumber);
         this.lastNumber = null;
-        this.lastChar = ".";
+        this.lastChar = '.';
         return;
       }
     }
@@ -82,12 +84,12 @@ export class TokenStream {
     let previousWasRegExp = this.previousWasRegExp;
     this.previousWasRegExp = isRegExp;
     if (lastChar &&
-        ((lastChar == "+" || lastChar == "-") &&
-        lastChar == rightChar ||
+        ((lastChar === '+' || lastChar === '-') &&
+        lastChar === rightChar ||
         code.isIdentifierPartES6(lastChar.charCodeAt(0)) && code.isIdentifierPartES6(rightChar.charCodeAt(0)) ||
-        lastChar == "/" && rightChar == "/" ||
-        previousWasRegExp && rightChar == "i")) {
-      this.result += " ";
+        lastChar === '/' && rightChar === '/' ||
+        previousWasRegExp && rightChar === 'i')) {
+      this.result += ' ';
     }
 
     this.result += tokenStr;
