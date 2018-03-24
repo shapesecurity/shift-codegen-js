@@ -32,6 +32,7 @@
     "everything.js": "^1.0.3",
     "expect.js": "0.3.1",
     "mocha": "2.2.5",
+    "shift-parser-expectations": "2016.0.1",
     "shift-parser": "5.2.3"
   },
   "keywords": [
