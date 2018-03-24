@@ -537,7 +537,6 @@ describe('Code generator', () => {
 
     it('LiteralNullExpression', () => {
       testModule('null');
-      test2('null', 'nul\\u006c');
     });
 
     it('FunctionDeclaration', () => {

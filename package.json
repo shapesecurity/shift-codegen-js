@@ -16,7 +16,7 @@
     "test": "mocha --inline-diffs --check-leaks --ui tdd --reporter dot --timeout 5000 --recursive test",
     "build": "babel --source-maps-inline --out-dir dist src",
     "lint": "eslint src test",
-    "prepare": "rm -rf dist/* && npm update && npm run build"
+    "prepare": "rm -rf dist/* && npm run build"
   },
   "dependencies": {
     "babel-eslint": "^8.2.2",
@@ -32,7 +32,7 @@
     "everything.js": "^1.0.3",
     "expect.js": "0.3.1",
     "mocha": "2.2.5",
-    "shift-parser": "5.0.0"
+    "shift-parser": "5.2.3"
   },
   "keywords": [
     "Shift",
