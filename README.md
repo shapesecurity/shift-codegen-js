@@ -24,6 +24,16 @@ import codegen from "shift-codegen";
 let programSource = codegen(/* Shift format AST */);
 ```
 
+Location information is available in environments which support WeakMap via an alternative interface:
+```js
+let tree = parseScript('foo(); bar;');
+
+import { codeGenWithLocation } from "shift-codegen";
+let { source, locations } = codeGenWithLocation(tree);
+source; // 'foo();bar';
+locations.get(tree.statements[0].expression); // { start: { line: 1, column: 0, offset: 0 }, end: { line: 1, column: 5, offset: 5 } }
+```
+
 
 ## Contributing
 

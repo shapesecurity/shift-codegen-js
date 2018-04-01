@@ -528,6 +528,7 @@ describe('Code generator', () => {
       testModule('/a\\r/ instanceof 3');
       testModule('/a\\r/g instanceof 3');
       testModule('/a/ in 0');
+      testModule('/a/;i');
     });
 
     it('LiteralBooleanExpression', () => {

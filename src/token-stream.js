@@ -16,11 +16,8 @@
 
 import { code } from 'esutils';
 
-function numberDot(fragment) {
-  if (fragment.indexOf('.') < 0 && fragment.indexOf('e') < 0 && fragment.indexOf('x') < 0) {
-    return '..';
-  }
-  return '.';
+export function needsDoubleDot(fragment) {
+  return fragment.indexOf('.') < 0 && fragment.indexOf('e') < 0 && fragment.indexOf('x') < 0;
 }
 
 function renderNumber(n) {
@@ -62,16 +59,22 @@ export class TokenStream {
     this.optionalSemi = true;
   }
 
+  putRaw(tokenStr) {
+    this.result += tokenStr;
+  }
+
   put(tokenStr, isRegExp) {
     if (this.optionalSemi) {
       this.optionalSemi = false;
       if (tokenStr !== '}') {
-        this.put(';');
+        this.result += ';';
+        this.lastChar = ';';
+        this.previousWasRegExp = false;
       }
     }
     if (this.lastNumber !== null && tokenStr.length === 1) {
       if (tokenStr === '.') {
-        this.result += numberDot(this.lastNumber);
+        this.result += needsDoubleDot(this.lastNumber) ? '..' : '.';
         this.lastNumber = null;
         this.lastChar = '.';
         return;

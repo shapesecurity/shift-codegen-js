@@ -22,7 +22,7 @@
     "babel-eslint": "^8.2.2",
     "esutils": "^2.0.2",
     "object-assign": "^4.1.0",
-    "shift-reducer": "^4.0.0"
+    "shift-reducer": "^4.3.0"
   },
   "devDependencies": {
     "babel-cli": "6.3.13",
@@ -33,7 +33,7 @@
     "expect.js": "0.3.1",
     "mocha": "2.2.5",
     "shift-parser-expectations": "2016.0.1",
-    "shift-parser": "5.2.3"
+    "shift-parser": "5.2.4"
   },
   "keywords": [
     "Shift",
