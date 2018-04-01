@@ -1,5 +1,5 @@
 import reduce from 'shift-reducer';
-import { TokenStream } from './token_stream';
+import { TokenStream } from './token-stream';
 import MinimalCodeGen from './minimal-codegen';
 
 export default function codeGen(script, generator = new MinimalCodeGen) {
@@ -12,3 +12,4 @@ export default function codeGen(script, generator = new MinimalCodeGen) {
 export { default as MinimalCodeGen } from './minimal-codegen';
 export { ExtensibleCodeGen, FormattedCodeGen, Sep } from './formatted-codegen';
 export { Precedence, getPrecedence, escapeStringLiteral, CodeRep, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp } from './coderep';
+export { default as codeGenWithLocation } from './with-location';

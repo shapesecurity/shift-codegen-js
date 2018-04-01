@@ -1,6 +1,6 @@
 import objectAssign from 'object-assign';
 import { keyword } from 'esutils';
-import { Precedence, getPrecedence, escapeStringLiteral, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp } from './coderep';
+import { Precedence, getPrecedence, escapeStringLiteral, Empty, Token, RawToken, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp } from './coderep';
 
 function p(node, precedence, a) {
   return getPrecedence(node) < precedence ? paren(a) : a;
@@ -58,6 +58,14 @@ export default class MinimalCodeGen {
   parenToAvoidBeingDirective(element, original) {
     if (element && element.type === 'ExpressionStatement' && element.expression.type === 'LiteralStringExpression') {
       return seq(paren(original.children[0]), semiOp());
+    }
+    return original;
+  }
+
+  regenerateArrowParams(element, original) {
+    if (element.rest == null && element.items.length === 1 && element.items[0].type === 'BindingIdentifier') {
+      // FormalParameters unconditionally include parentheses, but they're not necessary here
+      return this.reduceBindingIdentifier(element.items[0]);
     }
     return original;
   }
@@ -383,40 +391,38 @@ export default class MinimalCodeGen {
     if (statements.length) {
       statements[0] = this.parenToAvoidBeingDirective(node.statements[0], statements[0]);
     }
-    return seq(...directives, ...statements);
+    return brace(seq(...directives, ...statements));
   }
 
   reduceFunctionDeclaration(node, { name, params, body }) {
-    return seq(t('function'), node.isGenerator ? t('*') : empty(), node.name.name === '*default*' ? empty() : name, paren(params), brace(body));
+    return seq(t('function'), node.isGenerator ? t('*') : empty(), node.name.name === '*default*' ? empty() : name, params, body);
   }
 
   reduceFunctionExpression(node, { name, params, body }) {
-    let state = seq(t('function'), node.isGenerator ? t('*') : empty(), name ? name : empty(), paren(params), brace(body));
+    let state = seq(t('function'), node.isGenerator ? t('*') : empty(), name ? name : empty(), params, body);
     state.startsWithFunctionOrClass = true;
     return state;
   }
 
   reduceFormalParameters(node, { items, rest }) {
-    return commaSep(items.concat(rest == null ? [] : [seq(t('...'), rest)]));
+    return paren(commaSep(items.concat(rest == null ? [] : [seq(t('...'), rest)])));
   }
 
   reduceArrowExpression(node, { params, body }) {
-    if (node.params.rest != null || node.params.items.length !== 1 || node.params.items[0].type !== 'BindingIdentifier') {
-      params = paren(params);
-    }
+    params = this.regenerateArrowParams(node.params, params);
     let containsIn = false;
-    if (node.body.type === 'FunctionBody') {
-      body = brace(body);
-    } else if (body.startsWithCurly) {
-      body = paren(body);
-    } else if (body.containsIn) {
-      containsIn = true;
+    if (node.body.type !== 'FunctionBody') {
+      if (body.startsWithCurly) {
+        body = paren(body);
+      } else if (body.containsIn) {
+        containsIn = true;
+      }
     }
     return objectAssign(seq(params, t('=>'), p(node.body, Precedence.Assignment, body)), { containsIn });
   }
 
   reduceGetter(node, { name, body }) {
-    return seq(t('get'), name, paren(empty()), brace(body));
+    return seq(t('get'), name, paren(empty()), body);
   }
 
   reduceIdentifierExpression(node) {
@@ -541,7 +547,7 @@ export default class MinimalCodeGen {
   }
 
   reduceMethod(node, { name, params, body }) {
-    return seq(node.isGenerator ? t('*') : empty(), name, paren(params), brace(body));
+    return seq(node.isGenerator ? t('*') : empty(), name, params, body);
   }
 
   reduceModule(node, { directives, items }) {
@@ -599,7 +605,7 @@ export default class MinimalCodeGen {
   }
 
   reduceSetter(node, { name, param, body }) {
-    return seq(t('set'), name, paren(param), brace(body));
+    return seq(t('set'), name, paren(param), body);
   }
 
   reduceShorthandProperty(node, { name }) {
@@ -663,11 +669,12 @@ export default class MinimalCodeGen {
     state = seq(state, t('`'));
     for (let i = 0, l = node.elements.length; i < l; ++i) {
       if (node.elements[i].type === 'TemplateElement') {
-        let d = '';
-        if (i > 0) d += '}';
-        d += node.elements[i].rawValue;
-        if (i < l - 1) d += '${';
-        state = seq(state, t(d));
+        state = seq(
+          state,
+          i > 0 ? t('}') : empty(),
+          elements[i],
+          i < l - 1 ? t('${') : empty()
+        );
       } else {
         state = seq(state, elements[i]);
       }
@@ -682,7 +689,7 @@ export default class MinimalCodeGen {
   }
 
   reduceTemplateElement(node) {
-    return t(node.rawValue);
+    return new RawToken(node.rawValue);
   }
 
   reduceThisExpression(/* node */) {

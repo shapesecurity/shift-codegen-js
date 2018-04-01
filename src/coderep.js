@@ -208,6 +208,17 @@ export class Token extends CodeRep {
   }
 }
 
+export class RawToken extends CodeRep {
+  constructor(token) {
+    super();
+    this.token = token;
+  }
+
+  emit(ts) {
+    ts.putRaw(this.token);
+  }
+}
+
 export class NumberCodeRep extends CodeRep {
   constructor(number) {
     super();
