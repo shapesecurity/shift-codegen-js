@@ -20,9 +20,8 @@ function isIdentifierPartES6(char) {
   let charCode = char.charCodeAt(0);
   if (charCode < 128) {
     return idContinueBool[charCode];
-  } else {
-    return idContinueLargeRegex.test(char);
   }
+  return idContinueLargeRegex.test(char);
 }
 
 export function needsDoubleDot(fragment) {
