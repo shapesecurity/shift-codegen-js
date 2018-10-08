@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-import { code } from 'esutils';
+import { idContinueLargeRegex, idContinueBool } from './unicode';
+
+function isIdentifierPartES6(char) {
+  let charCode = char.charCodeAt(0);
+  if (charCode < 128) {
+    return idContinueBool[charCode];
+  }
+  return idContinueLargeRegex.test(char);
+}
 
 export function needsDoubleDot(fragment) {
   return fragment.indexOf('.') < 0 && fragment.indexOf('e') < 0 && fragment.indexOf('x') < 0;
@@ -44,7 +52,7 @@ export class TokenStream {
   constructor() {
     this.result = '';
     this.lastNumber = null;
-    this.lastChar = null;
+    this.lastCodePoint = null;
     this.optionalSemi = false;
     this.previousWasRegExp = false;
   }
@@ -68,7 +76,7 @@ export class TokenStream {
       this.optionalSemi = false;
       if (tokenStr !== '}') {
         this.result += ';';
-        this.lastChar = ';';
+        this.lastCodePoint = ';';
         this.previousWasRegExp = false;
       }
     }
@@ -76,23 +84,26 @@ export class TokenStream {
       if (tokenStr === '.') {
         this.result += needsDoubleDot(this.lastNumber) ? '..' : '.';
         this.lastNumber = null;
-        this.lastChar = '.';
+        this.lastCodePoint = '.';
         return;
       }
     }
-    this.lastNumber = null;
-    let rightChar = tokenStr.charAt(0);
-    let lastChar = this.lastChar;
-    this.lastChar = tokenStr.charAt(tokenStr.length - 1);
-    let previousWasRegExp = this.previousWasRegExp;
-    this.previousWasRegExp = isRegExp;
-    if (lastChar &&
-        ((lastChar === '+' || lastChar === '-') &&
-        lastChar === rightChar ||
-        code.isIdentifierPartES6(lastChar.charCodeAt(0)) && code.isIdentifierPartES6(rightChar.charCodeAt(0)) ||
-        lastChar === '/' && rightChar === '/' ||
-        previousWasRegExp && rightChar === 'i')) {
-      this.result += ' ';
+    let tokenStrCodePointCount = [...tokenStr].length; // slow, no unicode length?
+    if (tokenStrCodePointCount > 0) {
+      this.lastNumber = null;
+      let rightCodePoint = String.fromCodePoint(tokenStr.codePointAt(0));
+      let lastCodePoint = this.lastCodePoint;
+      this.lastCodePoint = String.fromCodePoint(tokenStr.codePointAt(tokenStrCodePointCount - 1));
+      let previousWasRegExp = this.previousWasRegExp;
+      this.previousWasRegExp = isRegExp;
+      if (lastCodePoint &&
+          ((lastCodePoint === '+' || lastCodePoint === '-') &&
+          lastCodePoint === rightCodePoint ||
+          isIdentifierPartES6(lastCodePoint) && isIdentifierPartES6(rightCodePoint) ||
+          lastCodePoint === '/' && rightCodePoint === '/' ||
+          previousWasRegExp && rightCodePoint === 'i')) {
+        this.result += ' ';
+      }
     }
 
     this.result += tokenStr;
