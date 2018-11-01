@@ -3,9 +3,10 @@ language: node_js
 script:
   - curl https://raw.githubusercontent.com/shapesecurity/CLA/master/cla-travis.sh | bash
   - npm run build
+  - if [ -n "$(git status --porcelain)" ]; then echo "repo is dirty"; exit 1; fi
   - npm run lint
   - npm test
 node_js:
-  - "4"
   - "6"
   - "8"
+  - "10"
