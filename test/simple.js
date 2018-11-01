@@ -241,6 +241,11 @@ describe('Code generator', () => {
       testModule('({async a(){}})');
     });
 
+    it('AwaitExpression', () => {
+      testModule('async function f(){await 0}');
+      testModule('async function f(){await(a+b)}');
+    });
+
     it('ArrayAssignmentTarget', () => {
       testModule('[]=0');
       testModule('[...a]=0');
