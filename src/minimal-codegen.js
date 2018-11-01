@@ -395,11 +395,11 @@ export default class MinimalCodeGen {
   }
 
   reduceFunctionDeclaration(node, { name, params, body }) {
-    return seq(t('function'), node.isGenerator ? t('*') : empty(), node.name.name === '*default*' ? empty() : name, params, body);
+    return seq(node.isAsync ? t('async') : empty(), t('function'), node.isGenerator ? t('*') : empty(), node.name.name === '*default*' ? empty() : name, params, body);
   }
 
   reduceFunctionExpression(node, { name, params, body }) {
-    let state = seq(t('function'), node.isGenerator ? t('*') : empty(), name ? name : empty(), params, body);
+    let state = seq(node.isAsync ? t('async') : empty(), t('function'), node.isGenerator ? t('*') : empty(), name ? name : empty(), params, body);
     state.startsWithFunctionOrClass = true;
     return state;
   }
@@ -418,7 +418,7 @@ export default class MinimalCodeGen {
         containsIn = true;
       }
     }
-    return objectAssign(seq(params, t('=>'), p(node.body, Precedence.Assignment, body)), { containsIn });
+    return objectAssign(seq(node.isAsync ? t('async') : empty(), params, t('=>'), p(node.body, Precedence.Assignment, body)), { containsIn });
   }
 
   reduceGetter(node, { name, body }) {
@@ -547,7 +547,7 @@ export default class MinimalCodeGen {
   }
 
   reduceMethod(node, { name, params, body }) {
-    return seq(node.isGenerator ? t('*') : empty(), name, params, body);
+    return seq(node.isAsync ? t('async') : empty(), node.isGenerator ? t('*') : empty(), name, params, body);
   }
 
   reduceModule(node, { directives, items }) {
