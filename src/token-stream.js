@@ -103,7 +103,7 @@ export class TokenStream {
           lastCodePoint === '/' && rightCodePoint === '/' ||
           previousWasRegExp && rightCodePoint === 'i' ||
           this.result.endsWith('<!') && tokenStr.startsWith('--') ||
-          this.result.endsWith('<!-') && tokenStr.startsWith('-'))) {  
+          this.result.endsWith('<!-') && tokenStr.startsWith('-'))) {
         this.result += ' ';
       }
     }
