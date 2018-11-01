@@ -43,6 +43,7 @@ const separatorNames = [
   'ARRAY_BEFORE_COMMA',
   'ARRAY_AFTER_COMMA',
   'SPREAD',
+  'AWAIT',
   'BEFORE_DEFAULT_EQUALS',
   'AFTER_DEFAULT_EQUALS',
   'REST',
@@ -419,6 +420,10 @@ export class ExtensibleCodeGen {
       content = seq(content, this.sep(Sep.ARRAY_BEFORE_COMMA), this.t(','), this.sep(Sep.ARRAY_AFTER_COMMA));
     }
     return this.bracket(content, Sep.ARRAY_INITIAL, Sep.ARRAY_FINAL);
+  }
+
+  reduceAwaitExpression(node, { expression }) {
+    return seq(this.t('await'), this.sep(Sep.AWAIT), this.p(node.expression, getPrecedence(node), expression));
   }
 
   reduceSpreadElement(node, { expression }) {
@@ -1190,6 +1195,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
 
   sep(separator) {
     switch (separator.type) {
+      case 'AWAIT':
       case 'ARRAY_AFTER_COMMA':
       case 'OBJECT_AFTER_COMMA':
       case 'ARGS_AFTER_COMMA':

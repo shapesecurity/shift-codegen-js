@@ -120,6 +120,7 @@ export function getPrecedence(node) {
       return node.arguments.length === 0 ? Precedence.New : Precedence.Member;
     case 'UpdateExpression':
       return node.isPrefix ? Precedence.Prefix : Precedence.Postfix;
+    case 'AwaitExpression':
     case 'UnaryExpression':
       return Precedence.Prefix;
     default:

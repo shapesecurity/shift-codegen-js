@@ -82,6 +82,10 @@ export default class MinimalCodeGen {
     return bracket(content);
   }
 
+  reduceAwaitExpression(node, { expression }) {
+    return seq(t('await'), p(node.expression, getPrecedence(node), expression));
+  }
+
   reduceSpreadElement(node, { expression }) {
     return seq(t('...'), p(node.expression, Precedence.Assignment, expression));
   }
