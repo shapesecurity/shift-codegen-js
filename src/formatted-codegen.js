@@ -139,6 +139,7 @@ const separatorNames = [
   'BEFORE_LABEL_COLON',
   'AFTER_LABEL_COLON',
   'AFTER_METHOD_GENERATOR_STAR',
+  'AFTER_METHOD_ASYNC',
   'AFTER_METHOD_NAME',
   'BEFORE_METHOD_BODY',
   'AFTER_MODULE_DIRECTIVES',
@@ -215,6 +216,7 @@ const separatorNames = [
   'ARROW_PARAMETERS_PAREN_EMPTY',
   'ARROW_BODY_PAREN_BEFORE',
   'ARROW_BODY_PAREN_AFTER',
+  'BEFORE_ARROW_ASYNC_PARAMS',
   'GETTER_PARAMS',
   'IF_PAREN_BEFORE',
   'IF_PAREN_AFTER',
@@ -733,11 +735,11 @@ export class ExtensibleCodeGen {
   }
 
   reduceFunctionDeclaration(node, { name, params, body }) {
-    return seq(this.t('function'), node.isGenerator ? seq(this.sep(Sep.BEFORE_GENERATOR_STAR), this.t('*'), this.sep(Sep.AFTER_GENERATOR_STAR)) : empty(), this.sep(Sep.BEFORE_FUNCTION_NAME(node)), node.name.name === '*default*' ? empty() : name, this.sep(Sep.BEFORE_FUNCTION_PARAMS), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_FUNCTION_DECLARATION_BODY), this.brace(body, node, Sep.FUNCTION_BRACE_INITIAL, Sep.FUNCTION_BRACE_FINAL, Sep.FUNCTION_EMPTY), this.sep(Sep.AFTER_STATEMENT(node)));
+    return seq(node.isAsync ? this.t('async') : empty(), this.t('function'), node.isGenerator ? seq(this.sep(Sep.BEFORE_GENERATOR_STAR), this.t('*'), this.sep(Sep.AFTER_GENERATOR_STAR)) : empty(), this.sep(Sep.BEFORE_FUNCTION_NAME(node)), node.name.name === '*default*' ? empty() : name, this.sep(Sep.BEFORE_FUNCTION_PARAMS), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_FUNCTION_DECLARATION_BODY), this.brace(body, node, Sep.FUNCTION_BRACE_INITIAL, Sep.FUNCTION_BRACE_FINAL, Sep.FUNCTION_EMPTY), this.sep(Sep.AFTER_STATEMENT(node)));
   }
 
   reduceFunctionExpression(node, { name, params, body }) {
-    let state = seq(this.t('function'), node.isGenerator ? seq(this.sep(Sep.BEFORE_GENERATOR_STAR), this.t('*'), this.sep(Sep.AFTER_GENERATOR_STAR)) : empty(), this.sep(Sep.BEFORE_FUNCTION_NAME(node)), name ? name : empty(), this.sep(Sep.BEFORE_FUNCTION_PARAMS), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_FUNCTION_EXPRESSION_BODY), this.brace(body, node, Sep.FUNCTION_EXPRESSION_BRACE_INITIAL, Sep.FUNCTION_EXPRESSION_BRACE_FINAL, Sep.FUNCTION_EXPRESSION_EMPTY));
+    let state = seq(node.isAsync ? this.t('async') : empty(), this.t('function'), node.isGenerator ? seq(this.sep(Sep.BEFORE_GENERATOR_STAR), this.t('*'), this.sep(Sep.AFTER_GENERATOR_STAR)) : empty(), this.sep(Sep.BEFORE_FUNCTION_NAME(node)), name ? name : empty(), this.sep(Sep.BEFORE_FUNCTION_PARAMS), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_FUNCTION_EXPRESSION_BODY), this.brace(body, node, Sep.FUNCTION_EXPRESSION_BRACE_INITIAL, Sep.FUNCTION_EXPRESSION_BRACE_FINAL, Sep.FUNCTION_EXPRESSION_EMPTY));
     state.startsWithFunctionOrClass = true;
     return state;
   }
@@ -758,7 +760,7 @@ export class ExtensibleCodeGen {
     } else if (body.containsIn) {
       containsIn = true;
     }
-    return objectAssign(seq(params, this.sep(Sep.BEFORE_ARROW), this.t('=>'), this.sep(Sep.AFTER_ARROW), this.p(node.body, Precedence.Assignment, body)), { containsIn });
+    return objectAssign(seq(node.isAsync ? seq(this.t('async'), this.sep(Sep.BEFORE_ARROW_ASYNC_PARAMS)) : empty(), params, this.sep(Sep.BEFORE_ARROW), this.t('=>'), this.sep(Sep.AFTER_ARROW), this.p(node.body, Precedence.Assignment, body)), { containsIn });
   }
 
   reduceGetter(node, { name, body }) {
@@ -890,7 +892,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceMethod(node, { name, params, body }) {
-    return seq(node.isGenerator ? seq(this.t('*'), this.sep(Sep.AFTER_METHOD_GENERATOR_STAR)) : empty(), name, this.sep(Sep.AFTER_METHOD_NAME), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_METHOD_BODY), this.brace(body, node, Sep.METHOD_BRACE_INTIAL, Sep.METHOD_BRACE_FINAL, Sep.METHOD_BRACE_EMPTY));
+    return seq(node.isAsync ? seq(this.t('async'), this.sep(Sep.AFTER_METHOD_ASYNC)) : empty(), node.isGenerator ? seq(this.t('*'), this.sep(Sep.AFTER_METHOD_GENERATOR_STAR)) : empty(), name, this.sep(Sep.AFTER_METHOD_NAME), this.paren(params, Sep.PARAMETERS_PAREN_BEFORE, Sep.PARAMETERS_PAREN_AFTER, Sep.PARAMETERS_PAREN_EMPTY), this.sep(Sep.BEFORE_METHOD_BODY), this.brace(body, node, Sep.METHOD_BRACE_INTIAL, Sep.METHOD_BRACE_FINAL, Sep.METHOD_BRACE_EMPTY));
   }
 
   reduceModule(node, { directives, items }) {
@@ -1228,6 +1230,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case 'BEFORE_FUNCTION_EXPRESSION_BODY':
       case 'BEFORE_ARROW':
       case 'AFTER_ARROW':
+      case 'BEFORE_ARROW_ASYNC_PARAMS':
       case 'AFTER_GET':
       case 'BEFORE_GET_BODY':
       case 'AFTER_IF':
@@ -1254,6 +1257,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
       case 'BEFORE_EXPORT_AS':
       case 'AFTER_EXPORT_AS':
       case 'AFTER_LABEL_COLON':
+      case 'AFTER_METHOD_ASYNC':
       case 'BEFORE_METHOD_BODY':
       case 'AFTER_NEW':
       case 'RETURN':

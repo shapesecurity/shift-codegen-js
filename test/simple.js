@@ -238,6 +238,7 @@ describe('Code generator', () => {
       testModule('({get a(){;},set a(param){;},b:1})');
       testModule('({a:(a,b)})');
       testModule('({a})');
+      testModule('({async a(){}})');
     });
 
     it('ArrayAssignmentTarget', () => {
@@ -546,6 +547,7 @@ describe('Code generator', () => {
       testModule('function f(a){}');
       testModule('function f(a,b){}');
       testModule('function f(a,b,...rest){}');
+      testModule('async function f(){}');
     });
 
     it('FunctionExpression', () => {
@@ -553,6 +555,7 @@ describe('Code generator', () => {
       testModule('(function f(){})');
       testModule('(function*(){})');
       testModule('(function*f(){})');
+      testModule('(async function(){})');
     });
 
     it('ArrowExpression', () => {
@@ -576,6 +579,9 @@ describe('Code generator', () => {
       testModule('()=>(1,2)');
       testModule('(()=>0)()');
       testModule('(a=(0,0))=>0');
+      testModule('async()=>0');
+      testModule('async a=>0');
+      testModule('async(...a)=>0');
     });
 
     it('NewTargetExpression', () => {
