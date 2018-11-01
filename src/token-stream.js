@@ -102,8 +102,7 @@ export class TokenStream {
           isIdentifierPartES6(lastCodePoint) && isIdentifierPartES6(rightCodePoint) ||
           lastCodePoint === '/' && rightCodePoint === '/' ||
           previousWasRegExp && rightCodePoint === 'i' ||
-          this.result.endsWith('<!') && tokenStr.startsWith('--') ||
-          this.result.endsWith('<!-') && tokenStr.startsWith('-'))) {
+          this.result.endsWith('<!') && tokenStr.startsWith('--'))) {
         this.result += ' ';
       }
     }

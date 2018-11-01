@@ -970,6 +970,10 @@ describe('Code generator', () => {
     it('ComputedPropertyName', () => {
       testModule('({[(0,0)]:0})');
     });
+
+    it('HTML comments', () => {
+      testScript('a<! --b');
+    });
   });
 });
 
