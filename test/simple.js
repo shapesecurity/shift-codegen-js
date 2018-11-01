@@ -775,6 +775,7 @@ describe('Code generator', () => {
       testScript('for((let.a)in b);');
       testScript('for((let[a])in b);');
       test2Script('for((let.a)in b);', 'for((let).a in b);');
+      testScript('for(var a=0 in 1);');
     });
 
     it('ForStatement', () => {
