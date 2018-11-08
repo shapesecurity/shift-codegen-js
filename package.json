@@ -19,7 +19,6 @@
     "prepare": "rm -rf dist/* && npm run build"
   },
   "dependencies": {
-    "babel-eslint": "^10.0.1",
     "esutils": "^2.0.2",
     "object-assign": "^4.1.0",
     "shift-reducer": "^4.3.0"
