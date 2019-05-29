@@ -21,7 +21,7 @@
   "dependencies": {
     "esutils": "^2.0.2",
     "object-assign": "^4.1.0",
-    "shift-reducer": "5.0.0"
+    "shift-reducer": "6.0.0"
   },
   "devDependencies": {
     "babel-cli": "6.26.0",
@@ -31,8 +31,8 @@
     "everything.js": "^1.0.3",
     "expect.js": "0.3.1",
     "mocha": "5.2.0",
-    "shift-parser-expectations": "2017.0.0",
-    "shift-parser": "6.0.0"
+    "shift-parser-expectations": "2018.0.2",
+    "shift-parser": "7.0.0"
   },
   "keywords": [
     "Shift",
