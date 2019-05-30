@@ -246,6 +246,10 @@ describe('Code generator', () => {
       testModule('async function f(){await(a+b)}');
     });
 
+    it('ForAwaitExpression', () => {
+      testModule(`(async function(){for await(a of b);}())`);
+    });
+
     it('ArrayAssignmentTarget', () => {
       testModule('[]=0');
       testModule('[...a]=0');
@@ -258,6 +262,9 @@ describe('Code generator', () => {
 
     it('ObjectAssignmentTarget', () => {
       testModule('({a=(0,0)}=0)');
+      testModule('({a,...b}={})');
+      testModule('({}=0)');
+      testModule('({...a}={})');
     });
 
     it('AssignmentTargetPropertyIdentifier', () => {
@@ -285,6 +292,9 @@ describe('Code generator', () => {
 
     it('ObjectBinding', () => {
       testModule('let{a=(0,0)}=0');
+      testModule('let{a,...b}={}');
+      testModule('let{}=0');
+      testModule('let{...a}={}');
     });
 
     it('BindingPropertyIdentifier', () => {

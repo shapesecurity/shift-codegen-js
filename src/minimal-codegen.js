@@ -208,8 +208,10 @@ export default class MinimalCodeGen {
 
   reduceObjectAssignmentTarget(node, { properties, rest }) {
     let content = commaSep(properties);
-    if (rest != null) {
-      content = seq(content, t(','), t('...'), rest);
+    if (properties.length === 0) {
+      content = rest == null ? empty() : seq(t('...'), rest);
+    } else {
+      content = rest == null ? content : seq(content, t(','), t('...'), rest);
     }
     let state = brace(content);
     state.startsWithCurly = true;
@@ -218,8 +220,10 @@ export default class MinimalCodeGen {
 
   reduceObjectBinding(node, { properties, rest }) {
     let content = commaSep(properties);
-    if (rest != null) {
-      content = seq(content, t(','), t('...'), rest);
+    if (properties.length === 0) {
+      content = rest == null ? empty() : seq(t('...'), rest);
+    } else {
+      content = rest == null ? content : seq(content, t(','), t('...'), rest);
     }
     let state = brace(content);
     state.startsWithCurly = true;
