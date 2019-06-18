@@ -549,7 +549,7 @@ export class ExtensibleCodeGen {
 
   reduceObjectAssignmentTarget(node, { properties, rest }) {
     let content;
-    if (properties.length == 0) {
+    if (properties.length === 0) {
       content = rest == null ? empty() : seq(this.t('...'), this.sep(Sep.REST), rest);
     } else {
       content = this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
@@ -562,7 +562,7 @@ export class ExtensibleCodeGen {
 
   reduceObjectBinding(node, { properties, rest }) {
     let content;
-    if (properties.length == 0) {
+    if (properties.length === 0) {
       content = rest == null ? empty() : seq(this.t('...'), this.sep(Sep.REST), rest);
     } else {
       content = this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
