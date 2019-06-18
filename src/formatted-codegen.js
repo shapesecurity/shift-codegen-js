@@ -44,6 +44,7 @@ const separatorNames = [
   'ARRAY_AFTER_COMMA',
   'SPREAD',
   'AWAIT',
+  'AFTER_FORAWAIT_AWAIT',
   'BEFORE_DEFAULT_EQUALS',
   'AFTER_DEFAULT_EQUALS',
   'REST',
@@ -430,6 +431,10 @@ export class ExtensibleCodeGen {
     return seq(this.t('...'), this.sep(Sep.SPREAD), this.p(node.expression, Precedence.Assignment, expression));
   }
 
+  reduceSpreadProperty(node, { expression }) {
+    return seq(this.t('...'), this.sep(Sep.SPREAD), this.getAssignmentExpr(expression));
+  }
+
   reduceAssignmentExpression(node, { binding, expression }) {
     let leftCode = binding;
     let rightCode = expression;
@@ -542,14 +547,28 @@ export class ExtensibleCodeGen {
     return this.bracket(content, Sep.ARRAY_INITIAL, Sep.ARRAY_FINAL, Sep.ARRAY_EMPTY);
   }
 
-  reduceObjectAssignmentTarget(node, { properties }) {
-    let state = this.brace(this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA), node, Sep.OBJECT_BRACE_INITIAL, Sep.OBJECT_BRACE_FINAL, Sep.OBJECT_EMPTY);
+  reduceObjectAssignmentTarget(node, { properties, rest }) {
+    let content;
+    if (properties.length === 0) {
+      content = rest == null ? empty() : seq(this.t('...'), this.sep(Sep.REST), rest);
+    } else {
+      content = this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
+      content = rest == null ? content : this.commaSep([content, seq(this.t('...'), this.sep(Sep.REST), rest)], Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
+    }
+    let state = this.brace(content, node, Sep.OBJECT_BRACE_INITIAL, Sep.OBJECT_BRACE_FINAL, Sep.OBJECT_EMPTY);
     state.startsWithCurly = true;
     return state;
   }
 
-  reduceObjectBinding(node, { properties }) {
-    let state = this.brace(this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA), node, Sep.OBJECT_BRACE_INITIAL, Sep.OBJECT_BRACE_FINAL, Sep.OBJECT_EMPTY);
+  reduceObjectBinding(node, { properties, rest }) {
+    let content;
+    if (properties.length === 0) {
+      content = rest == null ? empty() : seq(this.t('...'), this.sep(Sep.REST), rest);
+    } else {
+      content = this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
+      content = rest == null ? content : this.commaSep([content, seq(this.t('...'), this.sep(Sep.REST), rest)], Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
+    }
+    let state = this.brace(content, node, Sep.OBJECT_BRACE_INITIAL, Sep.OBJECT_BRACE_FINAL, Sep.OBJECT_EMPTY);
     state.startsWithCurly = true;
     return state;
   }
@@ -730,6 +749,13 @@ export class ExtensibleCodeGen {
       {
         endsWithMissingElse: body.endsWithMissingElse,
       });
+  }
+
+  reduceForAwaitStatement(node, { left, right, body }) {
+    left = node.left.type === 'VariableDeclaration' ? noIn(markContainsIn(left)) : left;
+    return objectAssign(
+      seq(this.t('for'), this.sep(Sep.AFTER_FOROF_FOR), this.t('await'), this.sep(Sep.AFTER_FORAWAIT_AWAIT), this.paren(seq(left.startsWithLet ? this.paren(left, Sep.FOR_OF_LET_PAREN_BEFORE, Sep.FOR_OF_LET_PAREN_AFTER) : left, this.sep(Sep.BEFORE_FOROF_OF), this.t('of'), this.sep(Sep.AFTER_FOROF_FOR), this.p(node.right, Precedence.Assignment, right)), Sep.FOR_OF_PAREN_BEFORE, Sep.FOR_OF_PAREN_AFTER), this.sep(Sep.BEFORE_FOROF_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
+      { endsWithMissingElse: body.endsWithMissingElse });
   }
 
   reduceFunctionBody(node, { directives, statements }) {
@@ -1196,6 +1222,7 @@ export class FormattedCodeGen extends ExtensibleCodeGen {
   sep(separator) {
     switch (separator.type) {
       case 'AWAIT':
+      case 'AFTER_FORAWAIT_AWAIT':
       case 'ARRAY_AFTER_COMMA':
       case 'OBJECT_AFTER_COMMA':
       case 'ARGS_AFTER_COMMA':

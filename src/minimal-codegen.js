@@ -90,6 +90,10 @@ export default class MinimalCodeGen {
     return seq(t('...'), p(node.expression, Precedence.Assignment, expression));
   }
 
+  reduceSpreadProperty(node, { expression }) {
+    return seq(t('...'), getAssignmentExpr(expression));
+  }
+
   reduceAssignmentExpression(node, { binding, expression }) {
     let leftCode = binding;
     let rightCode = expression;
@@ -202,14 +206,26 @@ export default class MinimalCodeGen {
     return bracket(content);
   }
 
-  reduceObjectAssignmentTarget(node, { properties }) {
-    let state = brace(commaSep(properties));
+  reduceObjectAssignmentTarget(node, { properties, rest }) {
+    let content = commaSep(properties);
+    if (properties.length === 0) {
+      content = rest == null ? empty() : seq(t('...'), rest);
+    } else {
+      content = rest == null ? content : seq(content, t(','), t('...'), rest);
+    }
+    let state = brace(content);
     state.startsWithCurly = true;
     return state;
   }
 
-  reduceObjectBinding(node, { properties }) {
-    let state = brace(commaSep(properties));
+  reduceObjectBinding(node, { properties, rest }) {
+    let content = commaSep(properties);
+    if (properties.length === 0) {
+      content = rest == null ? empty() : seq(t('...'), rest);
+    } else {
+      content = rest == null ? content : seq(content, t(','), t('...'), rest);
+    }
+    let state = brace(content);
     state.startsWithCurly = true;
     return state;
   }
@@ -389,6 +405,13 @@ export default class MinimalCodeGen {
       {
         endsWithMissingElse: body.endsWithMissingElse,
       });
+  }
+
+  reduceForAwaitStatement(node, { left, right, body }) {
+    left = node.left.type === 'VariableDeclaration' ? noIn(markContainsIn(left)) : left;
+    return objectAssign(
+      seq(t('for'), t('await'), paren(seq(left.startsWithLet ? paren(left) : left, t('of'), p(node.right, Precedence.Assignment, right))), body),
+      { endsWithMissingElse: body.endsWithMissingElse });
   }
 
   reduceFunctionBody(node, { directives, statements }) {
