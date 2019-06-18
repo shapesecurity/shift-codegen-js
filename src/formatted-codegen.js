@@ -561,10 +561,11 @@ export class ExtensibleCodeGen {
   }
 
   reduceObjectBinding(node, { properties, rest }) {
-    let content = this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
+    let content;
     if (properties.length == 0) {
       content = rest == null ? empty() : seq(this.t('...'), this.sep(Sep.REST), rest);
     } else {
+      content = this.commaSep(properties, Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
       content = rest == null ? content : this.commaSep([content, seq(this.t('...'), this.sep(Sep.REST), rest)], Sep.OBJECT_BEFORE_COMMA, Sep.OBJECT_AFTER_COMMA);
     }
     let state = this.brace(content, node, Sep.OBJECT_BRACE_INITIAL, Sep.OBJECT_BRACE_FINAL, Sep.OBJECT_EMPTY);

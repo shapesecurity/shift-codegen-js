@@ -267,6 +267,13 @@ describe('Code generator', () => {
       testModule('({...a}={})');
     });
 
+    it('ObjectExpression', () => {
+      testModule('({...{}})');
+      testModule('({...a.b}=0)');
+      testModule('({a,b:0,c})');
+      testModule('({...a=[]})');
+    });
+
     it('AssignmentTargetPropertyIdentifier', () => {
       testModule('({a=0}=0)');
     });
