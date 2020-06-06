@@ -801,6 +801,10 @@ describe('Code generator', () => {
       testModule('for(var i=(1 in[]);;);');
       testModule('for(var i=(1 in[]),b,c=(1 in[]);;);');
       testModule('for(var a=(b=>c in 0);;);');
+      testScript('for(let;;);');
+      testScript('for(let.a;;);');
+      testScript('for((let[a]);;);');
+      testScript('for((let[a]++);;);');
       testModule('!function*(){for((yield a in 0);;);}');
       testModule('!function*(){for((yield*a in 0);;);}');
       testModule('for((1 in[]);;);');
