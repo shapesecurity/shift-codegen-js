@@ -202,6 +202,8 @@ const separatorNames = [
   'DO_WHILE_TEST_PAREN_AFTER',
   'EXPRESSION_STATEMENT_PAREN_BEFORE',
   'EXPRESSION_STATEMENT_PAREN_AFTER',
+  'FOR_LET_PAREN_BEFORE',
+  'FOR_LET_PAREN_AFTER',
   'FOR_IN_LET_PAREN_BEFORE',
   'FOR_IN_LET_PAREN_AFTER',
   'FOR_IN_PAREN_BEFORE',
@@ -741,10 +743,16 @@ export class ExtensibleCodeGen {
   }
 
   reduceForStatement(node, { init, test, update, body }) {
+    if (init) {
+      if (init.startsWithLetSquareBracket) {
+        init = this.paren(init, Sep.FOR_LET_PAREN_BEFORE, Sep.FOR_LET_PAREN_AFTER);
+      }
+      init = noIn(markContainsIn(init));
+    }
     return objectAssign(
       seq(
         this.t('for'), this.sep(Sep.AFTER_FOR_FOR),
-        this.paren(seq(init ? seq(this.sep(Sep.BEFORE_FOR_INIT), noIn(markContainsIn(init)), this.sep(Sep.AFTER_FOR_INIT)) : this.sep(Sep.EMPTY_FOR_INIT), this.t(';'), test ? seq(this.sep(Sep.BEFORE_FOR_TEST), test, this.sep(Sep.AFTER_FOR_TEST)) : this.sep(Sep.EMPTY_FOR_TEST), this.t(';'), update ? seq(this.sep(Sep.BEFORE_FOR_UPDATE), update, this.sep(Sep.AFTER_FOR_UPDATE)) : this.sep(Sep.EMPTY_FOR_UPDATE))),
+        this.paren(seq(init ? seq(this.sep(Sep.BEFORE_FOR_INIT), init, this.sep(Sep.AFTER_FOR_INIT)) : this.sep(Sep.EMPTY_FOR_INIT), this.t(';'), test ? seq(this.sep(Sep.BEFORE_FOR_TEST), test, this.sep(Sep.AFTER_FOR_TEST)) : this.sep(Sep.EMPTY_FOR_TEST), this.t(';'), update ? seq(this.sep(Sep.BEFORE_FOR_UPDATE), update, this.sep(Sep.AFTER_FOR_UPDATE)) : this.sep(Sep.EMPTY_FOR_UPDATE))),
         this.sep(Sep.BEFORE_FOR_BODY), body, this.sep(Sep.AFTER_STATEMENT(node))),
       {
         endsWithMissingElse: body.endsWithMissingElse,
