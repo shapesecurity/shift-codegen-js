@@ -53,8 +53,10 @@ export class TokenStream {
     this.result = '';
     this.lastNumber = null;
     this.lastCodePoint = null;
+    this.lastTokenStr = '';
     this.optionalSemi = false;
     this.previousWasRegExp = false;
+    this.partialHtmlComment = false;
   }
 
   putNumber(number) {
@@ -69,6 +71,7 @@ export class TokenStream {
 
   putRaw(tokenStr) {
     this.result += tokenStr;
+    this.lastTokenStr = tokenStr;
   }
 
   put(tokenStr, isRegExp) {
@@ -96,17 +99,21 @@ export class TokenStream {
       this.lastCodePoint = String.fromCodePoint(tokenStr.codePointAt(tokenStrCodePointCount - 1));
       let previousWasRegExp = this.previousWasRegExp;
       this.previousWasRegExp = isRegExp;
+
       if (lastCodePoint &&
           ((lastCodePoint === '+' || lastCodePoint === '-') &&
           lastCodePoint === rightCodePoint ||
           isIdentifierPartES6(lastCodePoint) && isIdentifierPartES6(rightCodePoint) ||
           lastCodePoint === '/' && rightCodePoint === '/' ||
           previousWasRegExp && rightCodePoint === 'i' ||
-          this.result.endsWith('<!') && tokenStr.startsWith('--'))) {
+          this.partialHtmlComment && tokenStr.startsWith('--'))) {
         this.result += ' ';
       }
     }
 
+    this.partialHtmlComment = this.lastTokenStr.endsWith('<') && tokenStr === '!';
+
     this.result += tokenStr;
+    this.lastTokenStr = tokenStr;
   }
 }
