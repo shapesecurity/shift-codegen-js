@@ -397,10 +397,16 @@ export default class MinimalCodeGen {
   }
 
   reduceForStatement(node, { init, test, update, body }) {
+    if (init) {
+      if (init.startsWithLetSquareBracket) {
+        init = paren(init);
+      }
+      init = noIn(markContainsIn(init));
+    }
     return objectAssign(
       seq(
         t('for'),
-        paren(seq(init ? noIn(markContainsIn(init)) : empty(), semi(), test || empty(), semi(), update || empty())),
+        paren(seq(init ? init : empty(), semi(), test || empty(), semi(), update || empty())),
         body),
       {
         endsWithMissingElse: body.endsWithMissingElse,
