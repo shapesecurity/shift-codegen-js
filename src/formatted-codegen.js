@@ -923,7 +923,7 @@ export class ExtensibleCodeGen {
   }
 
   reduceLiteralRegExpExpression(node) {
-    return this.t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`, true);
+    return this.t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.dotAll ? 's' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`, true);
   }
 
   reduceLiteralStringExpression(node) {
