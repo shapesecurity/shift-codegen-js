@@ -545,6 +545,7 @@ describe('Code generator', () => {
       testModule('/a/gi');
       testModule('/a\\s/gi');
       testModule('/a\\r/gi');
+      testModule('/a/gimsuy');
       testModule('/a\\r/ instanceof 3');
       testModule('/a\\r/g instanceof 3');
       testModule('/a/ in 0');

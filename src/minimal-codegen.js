@@ -572,7 +572,7 @@ export default class MinimalCodeGen {
   }
 
   reduceLiteralRegExpExpression(node) {
-    return t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`, true);
+    return t(`/${node.pattern}/${node.global ? 'g' : ''}${node.ignoreCase ? 'i' : ''}${node.multiLine ? 'm' : ''}${node.dotAll ? 's' : ''}${node.unicode ? 'u' : ''}${node.sticky ? 'y' : ''}`, true);
   }
 
   reduceLiteralStringExpression(node) {
