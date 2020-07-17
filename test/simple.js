@@ -672,6 +672,8 @@ describe('Code generator', () => {
       testScript('for((let)of b);');
       testScript('for((let.a)of b);');
       testScript('for((let[a])of b);');
+      testScript('for((let().a)of b);');
+      testScript('for((let``.a)of b);');
       test2Script('for((let.a)of b);', 'for((let).a of b);');
       testModule('for(a of(b,c));');
     });
@@ -794,6 +796,8 @@ describe('Code generator', () => {
       testScript('for((let)in b);');
       testScript('for((let.a)in b);');
       testScript('for((let[a])in b);');
+      testScript('for((let().a)in b);');
+      testScript('for((let``.a)in b);');
       test2Script('for((let.a)in b);', 'for((let).a in b);');
       testScript('for(var a=0 in 1);');
     });
