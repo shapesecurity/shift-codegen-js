@@ -611,6 +611,7 @@ export class ExtensibleCodeGen {
       seq(this.p(node.callee, getPrecedence(node), callee), this.sep(Sep.CALL), this.paren(this.commaSep(parenthizedArgs, Sep.ARGS_BEFORE_COMMA, Sep.ARGS_AFTER_COMMA), Sep.CALL_PAREN_BEFORE, Sep.CALL_PAREN_AFTER, Sep.CALL_PAREN_EMPTY)),
       {
         startsWithCurly: callee.startsWithCurly,
+        startsWithLet: callee.startsWithLet,
         startsWithLetSquareBracket: callee.startsWithLetSquareBracket,
         startsWithFunctionOrClass: callee.startsWithFunctionOrClass,
       }
@@ -1065,6 +1066,7 @@ export class ExtensibleCodeGen {
     state = seq(state, this.t('`'));
     if (node.tag != null) {
       state.startsWithCurly = tag.startsWithCurly;
+      state.startsWithLet = tag.startsWithLet;
       state.startsWithLetSquareBracket = tag.startsWithLetSquareBracket;
       state.startsWithFunctionOrClass = tag.startsWithFunctionOrClass;
     }

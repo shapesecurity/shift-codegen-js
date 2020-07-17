@@ -266,6 +266,7 @@ export default class MinimalCodeGen {
       seq(p(node.callee, getPrecedence(node), callee), paren(commaSep(parenthizedArgs))),
       {
         startsWithCurly: callee.startsWithCurly,
+        startsWithLet: callee.startsWithLet,
         startsWithLetSquareBracket: callee.startsWithLetSquareBracket,
         startsWithFunctionOrClass: callee.startsWithFunctionOrClass,
       }
@@ -715,6 +716,7 @@ export default class MinimalCodeGen {
     state = seq(state, t('`'));
     if (node.tag != null) {
       state.startsWithCurly = tag.startsWithCurly;
+      state.startsWithLet = tag.startsWithLet;
       state.startsWithLetSquareBracket = tag.startsWithLetSquareBracket;
       state.startsWithFunctionOrClass = tag.startsWithFunctionOrClass;
     }
