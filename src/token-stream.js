@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { idContinueLargeRegex, idContinueBool } from './unicode';
+const { idContinueLargeRegex, idContinueBool } = require('./unicode');
 
 function isIdentifierPartES6(char) {
   let charCode = char.charCodeAt(0);
@@ -24,7 +24,7 @@ function isIdentifierPartES6(char) {
   return idContinueLargeRegex.test(char);
 }
 
-export function needsDoubleDot(fragment) {
+function needsDoubleDot(fragment) {
   return fragment.indexOf('.') < 0 && fragment.indexOf('e') < 0 && fragment.indexOf('x') < 0;
 }
 
@@ -48,7 +48,7 @@ function renderNumber(n) {
 
 }
 
-export class TokenStream {
+class TokenStream {
   constructor() {
     this.result = '';
     this.lastNumber = null;
@@ -117,3 +117,8 @@ export class TokenStream {
     this.lastTokenStr = tokenStr;
   }
 }
+
+module.exports = {
+  needsDoubleDot,
+  TokenStream,
+};

@@ -24,8 +24,6 @@ const Precedence = {
   Primary: 20,
 };
 
-export { Precedence };
-
 const BinaryPrecedence = {
   ',': Precedence.Sequence,
   '||': Precedence.LogicalOR,
@@ -54,7 +52,7 @@ const BinaryPrecedence = {
   '**': Precedence.Exponential,
 };
 
-export function getPrecedence(node) {
+function getPrecedence(node) {
   switch (node.type) {
     case 'ArrayExpression':
     case 'FunctionExpression':
@@ -128,7 +126,7 @@ export function getPrecedence(node) {
   }
 }
 
-export function escapeStringLiteral(stringValue) {
+function escapeStringLiteral(stringValue) {
   let result = '';
   let nSingle = 0, nDouble = 0;
   for (let i = 0, l = stringValue.length; i < l; ++i) {
@@ -171,7 +169,7 @@ export function escapeStringLiteral(stringValue) {
   return result;
 }
 
-export class CodeRep {
+class CodeRep {
   constructor() {
     this.containsIn = false;
     this.containsGroup = false;
@@ -189,7 +187,7 @@ export class CodeRep {
   }
 }
 
-export class Empty extends CodeRep {
+class Empty extends CodeRep {
   constructor() {
     super();
   }
@@ -197,7 +195,7 @@ export class Empty extends CodeRep {
   emit() {}
 }
 
-export class Token extends CodeRep {
+class Token extends CodeRep {
   constructor(token, isRegExp = false) {
     super();
     this.token = token;
@@ -209,7 +207,7 @@ export class Token extends CodeRep {
   }
 }
 
-export class RawToken extends CodeRep {
+class RawToken extends CodeRep {
   constructor(token) {
     super();
     this.token = token;
@@ -220,7 +218,7 @@ export class RawToken extends CodeRep {
   }
 }
 
-export class NumberCodeRep extends CodeRep {
+class NumberCodeRep extends CodeRep {
   constructor(number) {
     super();
     this.number = number;
@@ -231,7 +229,7 @@ export class NumberCodeRep extends CodeRep {
   }
 }
 
-export class Paren extends CodeRep {
+class Paren extends CodeRep {
   constructor(expr) {
     super();
     this.expr = expr;
@@ -249,7 +247,7 @@ export class Paren extends CodeRep {
   }
 }
 
-export class Bracket extends CodeRep {
+class Bracket extends CodeRep {
   constructor(expr) {
     super();
     this.expr = expr;
@@ -267,7 +265,7 @@ export class Bracket extends CodeRep {
   }
 }
 
-export class Brace extends CodeRep {
+class Brace extends CodeRep {
   constructor(expr) {
     super();
     this.expr = expr;
@@ -285,7 +283,7 @@ export class Brace extends CodeRep {
   }
 }
 
-export class NoIn extends CodeRep {
+class NoIn extends CodeRep {
   constructor(expr) {
     super();
     this.expr = expr;
@@ -301,7 +299,7 @@ export class NoIn extends CodeRep {
   }
 }
 
-export class ContainsIn extends CodeRep {
+class ContainsIn extends CodeRep {
   constructor(expr) {
     super();
     this.expr = expr;
@@ -323,7 +321,7 @@ export class ContainsIn extends CodeRep {
   }
 }
 
-export class Seq extends CodeRep {
+class Seq extends CodeRep {
   constructor(children) {
     super();
     this.children = children;
@@ -339,13 +337,13 @@ export class Seq extends CodeRep {
   }
 }
 
-export class Semi extends Token {
+class Semi extends Token {
   constructor() {
     super(';');
   }
 }
 
-export class CommaSep extends CodeRep {
+class CommaSep extends CodeRep {
   constructor(children) {
     super();
     this.children = children;
@@ -369,7 +367,7 @@ export class CommaSep extends CodeRep {
   }
 }
 
-export class SemiOp extends CodeRep {
+class SemiOp extends CodeRep {
   constructor() {
     super();
   }
@@ -378,3 +376,23 @@ export class SemiOp extends CodeRep {
     ts.putOptionalSemi();
   }
 }
+
+module.exports = {
+  Precedence,
+  getPrecedence,
+  escapeStringLiteral,
+  CodeRep,
+  Empty,
+  Token,
+  RawToken,
+  NumberCodeRep,
+  Paren,
+  Bracket,
+  Brace,
+  NoIn,
+  ContainsIn,
+  Seq,
+  Semi,
+  CommaSep,
+  SemiOp,
+};
