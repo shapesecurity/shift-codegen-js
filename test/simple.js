@@ -882,6 +882,7 @@ describe('Code generator', () => {
       testModule('try{}catch(a){}');
       testModule('try{}catch(a){}finally{}');
       testModule('try{}finally{}');
+      testModule('try{}catch{}');
     });
 
     it('VariableDeclarationStatement', () => {
