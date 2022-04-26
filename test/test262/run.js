@@ -49,13 +49,13 @@ function assertSuccessfulCodegen(expectedTree, parse) {
   expect(expectedTree).to.eql(formattedActualTree);
 }
 
-suite('test262', () => {
+describe('test262', () => {
   const achievedFailures = [];
   for (const f of fs.readdirSync(treesDir).filter(name => /tree.json$/.test(name))) {
     const json = fs.readFileSync(path.join(treesDir, f), 'utf8');
     const tree = JSON.parse(json, (k, v) => k === 'loc' ? void 0 : v);
 
-    test(`round-trips through x => parse(codegen(x)) [${f}]`, () => {
+    it(`round-trips through x => parse(codegen(x)) [${f}]`, () => {
       try {
         assertSuccessfulCodegen(tree, /module.js/.test(f) ? parseModuleWithLocation : parseScriptWithLocation);
       } catch (e) {
@@ -68,7 +68,7 @@ suite('test262', () => {
     });
   }
 
-  test('xfails', () => {
+  it('xfails', () => {
     const unexpectedlyPassed = testExpectations.xfail.filter(f => achievedFailures.indexOf(f) === -1);
     if (unexpectedlyPassed.length > 0) {
       throw new Error('Marked as xfailed, but didn\'t fail: ' + JSON.stringify(unexpectedlyPassed, null, '  '));

@@ -1,6 +1,6 @@
-import { reduce, adapt } from 'shift-reducer';
-import { TokenStream, needsDoubleDot } from './token-stream';
-import MinimalCodeGen from './minimal-codegen';
+const { reduce, adapt } = require('shift-reducer');
+const { TokenStream, needsDoubleDot } = require('./token-stream');
+const MinimalCodeGen = require('./minimal-codegen');
 
 function mightHaveSemi(type) {
   return /(Import)|(Export)|(Statement)|(Directive)|(SwitchCase)|(SwitchDefault)/.test(type);
@@ -150,9 +150,11 @@ function addLocationToReducer(reducer) {
   return wrapped;
 }
 
-export default function codeGenWithLocation(program, generator = new MinimalCodeGen) {
+function codeGenWithLocation(program, generator = new MinimalCodeGen) {
   let ts = new TokenStreamWithLocation;
   let rep = reduce(addLocationToReducer(generator), program);
   rep.emit(ts);
   return { source: ts.result, locations: ts.locations };
 }
+
+module.exports = codeGenWithLocation;

@@ -1,15 +1,40 @@
-import reduce from 'shift-reducer';
-import { TokenStream } from './token-stream';
-import MinimalCodeGen from './minimal-codegen';
+const reduce = require('shift-reducer').default;
+const { TokenStream } = require('./token-stream');
+const MinimalCodeGen = require('./minimal-codegen');
 
-export default function codeGen(script, generator = new MinimalCodeGen) {
+function codeGen(script, generator = new MinimalCodeGen) {
   let ts = new TokenStream;
   let rep = reduce(generator, script);
   rep.emit(ts);
   return ts.result;
 }
 
-export { default as MinimalCodeGen } from './minimal-codegen';
-export { ExtensibleCodeGen, FormattedCodeGen, Sep } from './formatted-codegen';
-export { Precedence, getPrecedence, escapeStringLiteral, CodeRep, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp } from './coderep';
-export { default as codeGenWithLocation } from './with-location';
+const { ExtensibleCodeGen, FormattedCodeGen, Sep } = require('./formatted-codegen');
+const { Precedence, getPrecedence, escapeStringLiteral, CodeRep, Empty, Token, NumberCodeRep, Paren, Bracket, Brace, NoIn, ContainsIn, Seq, Semi, CommaSep, SemiOp } = require('./coderep');
+const codeGenWithLocation = require('./with-location');
+
+module.exports = {
+  default: codeGen,
+  codeGen,
+  MinimalCodeGen,
+  ExtensibleCodeGen,
+  FormattedCodeGen,
+  Sep,
+  Precedence,
+  getPrecedence,
+  escapeStringLiteral,
+  CodeRep,
+  Empty,
+  Token,
+  NumberCodeRep,
+  Paren,
+  Bracket,
+  Brace,
+  NoIn,
+  ContainsIn,
+  Seq,
+  Semi,
+  CommaSep,
+  SemiOp,
+  codeGenWithLocation,
+};
