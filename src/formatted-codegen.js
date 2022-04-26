@@ -618,7 +618,13 @@ class ExtensibleCodeGen {
   }
 
   reduceCatchClause(node, { binding, body }) {
-    return seq(this.t('catch'), this.sep(Sep.BEFORE_CATCH_BINDING), this.paren(binding, Sep.CATCH_PAREN_BEFORE, Sep.CATCH_PAREN_AFTER), this.sep(Sep.AFTER_CATCH_BINDING), body);
+    if (binding == null) {
+      return seq(this.t('catch'), this.sep(Sep.BEFORE_CATCH_BINDING), body);
+    }
+    return seq(this.t('catch'),
+      this.sep(Sep.BEFORE_CATCH_BINDING),
+      this.paren(binding, Sep.CATCH_PAREN_BEFORE, Sep.CATCH_PAREN_AFTER),
+      this.sep(Sep.AFTER_CATCH_BINDING), body);
   }
 
   reduceClassDeclaration(node, { name, super: _super, elements }) {

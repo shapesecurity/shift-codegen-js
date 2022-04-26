@@ -274,6 +274,9 @@ class MinimalCodeGen {
   }
 
   reduceCatchClause(node, { binding, body }) {
+    if (binding == null) {
+      return seq(t('catch'), body);
+    }
     return seq(t('catch'), paren(binding), body);
   }
 
