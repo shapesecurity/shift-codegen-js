@@ -1359,6 +1359,10 @@ class FormattedCodeGen extends ExtensibleCodeGen {
     }
   }
 }
+FormattedCodeGen.isEmpty = isEmpty;
+FormattedCodeGen.Linebreak = Linebreak;
+FormattedCodeGen.seq = seq;
+FormattedCodeGen.indent = indent;
 
 module.exports = {
   Sep,
